@@ -1729,11 +1729,13 @@ function printCert(i){
   <style>
   @page{size:A4 landscape;margin:0}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Tahoma,sans-serif;width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;background:#e9ede9;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:Tahoma,sans-serif;width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;background:#e9ede9;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .sheet{
     width:297mm;height:210mm;position:relative;overflow:hidden;
-    background-image:url(https://msn80018001-svg.github.io/razi2026-mat/assets/cert-bg.jpg);
+    background-image:url(data:image/jpeg;base64,...);
     background-size:cover;background-position:center;background-repeat:no-repeat;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
     -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
   .name-slot{
@@ -1747,8 +1749,10 @@ function printCert(i){
     position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
     font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
   }
-  @media print{
+@media print{
     body{background:#fff}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  }
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   }
   </style></head><body>
