@@ -238,6 +238,31 @@ body.logged .cert-card{padding-top:50px}
 .kpi-pct.mid{background:var(--gold-light);color:#a77410}
 .kpi-pct.lo{background:#fdecec;color:#c0392b}
  
+/* ====== نبض التميز ====== */
+.pulse-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.pulse-updated{font-size:12.5px;color:var(--muted);font-weight:700}
+.pulse-actions{display:flex;gap:10px;flex-wrap:wrap}
+.pulse-print-btn{background:linear-gradient(180deg,var(--gold),var(--gold-dark));color:#3a2800;border-color:transparent}
+.pulse-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.pulse-stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;position:relative;overflow:hidden}
+.pulse-stat::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:5px;background:var(--green-700)}
+.pulse-stat.trend-up::before{background:#1a7a43}
+.pulse-stat.trend-down::before{background:#c0392b}
+.pulse-stat .ps-label{font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.pulse-stat .ps-val{font-size:26px;font-weight:900;color:var(--green-800);line-height:1}
+.pulse-stat .ps-trend{font-size:12px;font-weight:800;margin-top:6px;display:inline-block}
+.pulse-stat .ps-trend.up{color:#1a7a43}
+.pulse-stat .ps-trend.down{color:#c0392b}
+.pulse-stat .ps-trend.flat{color:var(--muted)}
+.pulse-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+@media(max-width:900px){.pulse-grid{grid-template-columns:1fr}}
+.pulse-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.pulse-card-head h3{font-size:16px;font-weight:900;color:var(--green-900);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pulse-narrative{font-size:15px;line-height:2.1;color:var(--ink);background:var(--green-50);border-radius:12px;padding:16px 18px;border:1px solid var(--line)}
+.pulse-reco{margin-top:14px;background:var(--gold-light);border:1px solid #f0dba8;border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.9;color:#7a5a08;font-weight:700}
+.pulse-reco b{color:#a77410}
+.pulse-radar-wrap{max-width:420px;margin:0 auto}
+ 
 /* ====== معرض الصور ====== */
 .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .gal-item{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;position:relative}
@@ -536,14 +561,15 @@ nav.tabs button:hover{transform:translateY(-2px)}
     <button class="portal-btn" id="portal-btn" onclick="portalClick()">🔑 دخول لجنة التميز</button>
   </div>
   <nav class="tabs">
-    <button class="active" data-view="dash">🏆 لوحة الأوائل والمتميزين </button>
+    <button class="active" data-view="dash">🏆 لوحة الأوائل وفرسان التميز</button>
     <button data-view="log">📄 دخول الطلاب والمعلمين للمشاركة <span id="log-nav-dot" class="nav-dot">0</span></button>
     <button data-view="org">🗂 الهيكل التنظيمي</button>
     <button data-view="plan">🎯 خطة التميز</button>
     <button data-view="meet">🗓 الاجتماعات</button>
     <button data-view="certs">📜 شهادات التقدير</button>
     <button data-view="kpi">📊 مؤشرات الأداء</button>
-    <button data-view="gallery">🖼 معرض الصور </button>
+    <button data-view="pulse">💓 نبض التميز</button>
+    <button data-view="gallery">🖼 معرض الصور والأنشطة المدرسية</button>
   </nav>
 </header>
  
@@ -631,6 +657,39 @@ nav.tabs button:hover{transform:translateY(-2px)}
     <div class="stat"><div><div class="label">إجمالي نقاط المبادرات</div><div class="num" id="stat-points">0</div></div><div class="ic o">🏆</div></div>
   </div>
   <div class="kpi-grid" id="kpi-grid"></div>
+</section>
+ 
+<section class="view" id="view-pulse">
+  <div class="section-head">
+    <h2><span class="em">💓</span> نبض التميز — التقرير التحليلي الذكي</h2>
+    <p class="sub">قراءة تحليلية تلقائية لأداء اللجنة خلال آخر 7 أيام، مبنية مباشرة على بيانات المنصة الحية</p>
+  </div>
+ 
+  <div class="pulse-toolbar">
+    <span class="pulse-updated" id="pulse-updated">آخر تحديث: —</span>
+    <div class="pulse-actions">
+      <button class="add-btn" onclick="renderPulse()">🔄 تحديث النبض</button>
+      <button class="add-btn pulse-print-btn" onclick="printPulseReport()">🖨 تصدير تقرير رسمي PDF</button>
+    </div>
+  </div>
+ 
+  <div class="pulse-stats" id="pulse-stats"></div>
+ 
+  <div class="pulse-grid">
+    <div class="pulse-card pulse-narrative-card">
+      <div class="pulse-card-head">
+        <h3><span class="em">📖</span> القراءة التحليلية</h3>
+      </div>
+      <p class="pulse-narrative" id="pulse-narrative">جارٍ تحليل بيانات الأسبوع…</p>
+      <div class="pulse-reco" id="pulse-reco"></div>
+    </div>
+    <div class="pulse-card pulse-radar-card">
+      <div class="pulse-card-head">
+        <h3><span class="em">🎯</span> مؤشر النبض المؤسسي</h3>
+      </div>
+      <div class="pulse-radar-wrap"><canvas id="pulse-radar-canvas"></canvas></div>
+    </div>
+  </div>
 </section>
  
 <section class="view" id="view-gallery">
@@ -792,7 +851,7 @@ nav.tabs button:hover{transform:translateY(-2px)}
     <div class="ai-modal-head"><span class="ic">✨</span> إنشاء شهادة بمساعدة الذكاء الاصطناعي</div>
     <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:16px">اكتب اسم المكرَّم وصفته وسبب التكريم باختصار، وسيصوغ الذكاء الاصطناعي عبارة تكريم احترافية جاهزة للاستخدام في الشهادة.</p>
     <label>اسم المكرَّم</label>
-    <input id="ai-name" placeholder="مثال: خالد">
+    <input id="ai-name" placeholder="مثال: خالد وليد">
     <label>الصفة</label>
     <input id="ai-role" placeholder="مثال: طالب بالمدرسة — الصف الخامس أ">
     <label>ملخص الإنجاز (نقاط سريعة)</label>
@@ -915,22 +974,11 @@ const CLASS_REASONS=[
  
 const DEFAULTS={
 students:[
- {n:" ",g:"الصف الخامس - أ",p:20,c:4},
- {n:"أ ",g:"الصف الخامس - أ",p:18,c:4},
- {n:" ",g:"الصف الرابع - أ",p:15,c:3},
- {n:" ",g:"الصف الرابع - ب",p:14,c:3},
- {n:" ",g:"الصف الخامس - ب",p:12,c:2},
- {n:" ",g:"الصف الرابع - أ",p:11,c:2},
- {n:" ",g:"الصف الخامس - أ",p:9,c:2},
- {n:" ",g:"الصف الرابع - ب",p:7,c:1}
+ {n:"طالب عينة — يُستبدل من لوحة الإدارة",g:"الصف الخامس - أ",p:0,c:0,rs:{}},
+ {n:"طالب عينة ٢ — يُستبدل من لوحة الإدارة",g:"الصف الرابع - أ",p:0,c:0,rs:{}}
 ],
 teachers:[
- {n:"أ. حمدان عمار المحياوي",g:"معلم العلوم — مقرر لجنة التميز",p:25,c:5},
- {n:"أ. خالد الدذبياني",g:"معلم الرياضيات",p:20,c:4},
- {n:"أ. فهد الدبياني",g:"معلم اللغة العربية",p:17,c:3},
- {n:"أ. احمد المرواني",g:"معلم التربية الإسلامية",p:14,c:3},
- {n:"أ. سعد الرفاعي",g:"معلم الدراسات الاجتماعية",p:11,c:2},
- {n:"أ. عبداللطيف البلوي",g:"معلم التربية البدنية",p:8,c:2}
+ {n:"أ. حمدان عمار المحياوي",g:"معلم العلوم — مقرر لجنة التميز",p:0,c:0,rs:{}}
 ],
 classes:[
  {n:"الصف الرابع 1",g:CLASS_REASONS[0],p:0,c:0,rs:{},teacher:""},
@@ -940,39 +988,17 @@ classes:[
  {n:"الصف الخامس 2",g:CLASS_REASONS[0],p:0,c:0,rs:{},teacher:""},
  {n:"الصف الخامس 3",g:CLASS_REASONS[0],p:0,c:0,rs:{},teacher:""}
 ],
-inits:[
- {t:"معرض العلوم التفاعلي وتجارب الطاقة المتجددة",type:"مشروع علمي متكامل",d:"2026-07-15",desc:"مشروع ريادي أشرف عليه معلم العلوم شمل تجارب عملية للطاقة الشمسية وطاقة الرياح بمشاركة طلاب الصفين الرابع والخامس.",o:"أ. حمدان عمار المحياوي",r:"أستاذ متميز",p:5,s:"ok"},
- {t:"حملة النظافة والمحافظة على الممتلكات العامة",type:"مبادرة تطوعية مدرسية",d:"2026-07-16",desc:"قيادة حملة تطوعية شملت تنظيف فناء المدرسة وتزيين ممرات الصفوف بلوحات توعوية.",o:"أ ",r:"طالب بالمدرسة",p:3,s:"ok"},
- {t:"درس تطبيقي متميز باستخدام تقنيات الذكاء الاصطناعي",type:"تقديم درس تطبيقي نموذجي",d:"2026-07-17",desc:"درس نموذجي في مادة العلوم للصف الخامس وُظفت فيه أدوات الذكاء الاصطناعي في العرض والتقويم.",o:"أ. حمدان عمار المحياوي",r:"أستاذ متميز",p:4,s:"ok"},
- {t:"أولمبياد العلوم المدرسي للصفوف العليا",type:"مسابقة علمية",d:"2026-07-18",desc:"مسابقة علمية تنافسية بين فصول الصفين الرابع والخامس لقياس المهارات العلمية والاستقصائية.",o:" ",r:"طالب بالمدرسة",p:4,s:"ok"},
- {t:"إذاعة مدرسية توعوية عن ترشيد استهلاك المياه",type:"نشاط إذاعي وتوعوي",d:"2026-07-19",desc:"فقرة إذاعية متكاملة عن أهمية ترشيد المياه في بيئة ينبع تضمنت مشاهد تمثيلية ومسابقة صباحية.",o:" ",r:"طالب بالمدرسة",p:3,s:"ok"},
- {t:"مبادرة الحديقة الصفية وزراعة النباتات المحلية",type:"مبادرة تطوعية مدرسية",d:"2026-07-20",desc:"إنشاء ركن زراعي تعليمي بمشاركة الطلاب لزراعة نباتات البيئة المحلية وربطها بدروس العلوم.",o:" ",r:"طالب بالمدرسة",p:3,s:"wait"}
-],
+inits:[],
 org:[
  {n:"أ. أحمد شديد الرفاعي",r:"قائد المدرسة — المشرف العام على لجنة التميز",lvl:1},
  {n:"أ. فهد حمود الميموني",r:"مشرف لجنة التميز المدرسي",lvl:2},
- {n:"أ. حمدان عمار المحياوي",r:"وكيل المدرسة — عضو اللجنة",lvl:4},
- {n:"اسم المرشد الطلابي",r:"عضو اللجنة — المرشد الطلابي",lvl:5},
- {n:"أ. خالد الذبياني",r:"عضو اللجنة — معلم الرياضيات",lvl:6},
- {n:"أ. فهد الذبياني",r:"عضو اللجنة — معلم اللغة العربية",lvl:6},
- {n:"أ. أحمد الملرواني",r:"عضو اللجنة — معلم التربية الإسلامية",lvl:6}
+ {n:"أ. حمدان عمار المحياوي",r:"مقرر لجنة التميز — معلم العلوم",lvl:3}
 ],
 plan:[
- {g:"رفع نسبة الطلاب المشاركين في المبادرات إلى 60% من طلاب الصفوف العليا",a:"إطلاق حملة تعريفية بالمنصة في الطابور الصباحي • تكريم أسبوعي لأصحاب النقاط • إشراك رواد الفصول في الترشيح",o:"أ. حمدان عمار المحياوي",d:"نهاية الفصل الدراسي الأول",prog:65,s:"ok"},
- {g:"اعتماد ما لا يقل عن 12 مبادرة نوعية خلال الفصل الدراسي",a:"فتح باب المبادرات عبر المنصة • مراجعة يومية للمبادرات المقدمة • دعم المبادرات العلمية والتطوعية بالأولوية",o:"أ. فهد حمود الميموني",d:"نهاية الفصل الدراسي الأول",prog:42,s:"ok"},
- {g:"توثيق جميع فعاليات اللجنة بالصور والمحاضر على المنصة",a:"تصوير كل فعالية ورفعها لمعرض الصور • تحرير محضر لكل اجتماع خلال يومين من انعقاده",o:"أ. سالم الجهني",d:"مستمر طوال العام",prog:80,s:"ok"},
- {g:"إشراك أولياء الأمور بالاطلاع على لوحة الشرف والمستجدات",a:"مشاركة رابط المنصة في مجموعات أولياء الأمور • إرسال إشعار شهري بأبرز الإنجازات",o:"أ. فهد الميموني",d:"بداية الفصل الدراسي الثاني",prog:25,s:"wait"}
+ {g:"هدف عينة — عدّله من لوحة الإدارة",a:"آلية التنفيذ",o:"اسم المسؤول",d:"موعد الإنجاز",prog:0,s:"wait"}
 ],
-meetings:[
- {t:"الاجتماع التأسيسي: إقرار خطة التميز وآلية النقاط",d:"2026-07-05",pl:"غرفة المصادر",att:"جميع أعضاء اللجنة",dec:"اعتماد لائحة النقاط والمكافآت • توزيع المهام على الأعضاء • تحديد موعد إطلاق المنصة",s:"done"},
- {t:"الاجتماع الثاني: مراجعة المبادرات ومستجدات المنصة",d:"2026-07-19",pl:"غرفة المصادر",att:"جميع أعضاء اللجنة بحضور قائد المدرسة",dec:"اعتماد خمس مبادرات جديدة • إقرار تصميم شهادات الشكر • تكليف الأعضاء بمتابعة مؤشرات الأداء",s:"done"},
- {t:"الاجتماع الثالث: تقييم منتصف الفصل وتكريم المتصدرين",d:"2026-08-09",pl:"قاعة الاجتماعات",att:"أعضاء اللجنة ورواد الفصول",dec:"سيُدرج المحضر بعد انعقاد الاجتماع بإذن الله",s:"up"}
-],
-certs:[
- {name:" ",role:"طالب بالمدرسة — الصف الخامس أ",reason:"تصدره لوحة الشرف وتميزه في أولمبياد العلوم المدرسي للصفوف العليا",d:"2026-07-20"},
- {name:"أ ",role:"طالب بالمدرسة — الصف الخامس أ",reason:"قيادته حملة النظافة والمحافظة على الممتلكات العامة بروح تطوعية عالية",d:"2026-07-20"},
- {name:"أ. خالد ",role:"معلم الرياضيات — عضو لجنة التميز",reason:"جهوده المتميزة في دعم مبادرات الطلاب ومتابعة تنافس الفصول",d:"2026-07-20"}
-],
+meetings:[],
+certs:[],
 kpis:[
  {n:"نسبة الطلاب المشاركين في المبادرات",cur:0,tgt:60,unit:"%",key:"student_participation_pct"},
  {n:"عدد المبادرات المعتمدة هذا الفصل",cur:0,tgt:12,unit:"مبادرة",key:"approved_inits_count"},
@@ -1132,6 +1158,7 @@ function goView(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   document.getElementById("view-"+v).classList.add("active");
   if(v==="admin")renderAdmin();
+  if(v==="pulse")renderPulse();
   if(v==="gallery")initGallery();
   if(v==="certs")initCertPhotos();
   if(v==="log"){
@@ -1841,6 +1868,219 @@ function renderKpis(){
   '<div class="gal-empty" style="grid-column:1/-1">لم تُضف مؤشرات بعد — يمكن إضافتها من لوحة الإدارة.</div>';
 }
  
+/* ====== نبض التميز — التحليل التلقائي ====== */
+let chartPulseRadar=null;
+const PULSE_KPI_SHORT={
+  student_participation_pct:"المشاركة",
+  approved_inits_count:"المبادرات",
+  meetings_done_count:"الاجتماعات",
+  certs_count:"الشهادات",
+  avg_points_participant:"متوسط النقاط",
+  gallery_count:"التوثيق البصري"
+};
+function parseYMD(s){
+  if(!s)return null;
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
+  if(!m)return null;
+  return new Date(+m[1],+m[2]-1,+m[3]);
+}
+function daysAgo(n){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-n);return d;
+}
+function computePulseData(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const startThis=daysAgo(6);
+  const startPrev=daysAgo(13);
+  const endPrev=daysAgo(7);
+  const okInits=DATA.inits.filter(i=>i.s==="ok");
+  const thisWeek=okInits.filter(i=>{const d=parseYMD(i.d);return d&&d>=startThis&&d<=today});
+  const prevWeek=okInits.filter(i=>{const d=parseYMD(i.d);return d&&d>=startPrev&&d<=endPrev});
+  const ptsThis=thisWeek.reduce((a,i)=>a+(+i.p||0),0);
+  const ptsPrev=prevWeek.reduce((a,i)=>a+(+i.p||0),0);
+  const cntThis=thisWeek.length, cntPrev=prevWeek.length;
+  const growth=ptsPrev>0?Math.round(((ptsThis-ptsPrev)/ptsPrev)*100):(ptsThis>0?100:0);
+  const cntGrowth=cntPrev>0?Math.round(((cntThis-cntPrev)/cntPrev)*100):(cntThis>0?100:0);
+  const typeTally={};
+  thisWeek.forEach(i=>{if(i.type)typeTally[i.type]=(typeTally[i.type]||0)+1});
+  let topType=null,topTypeCount=0;
+  Object.entries(typeTally).forEach(([t,c])=>{if(c>topTypeCount){topType=t;topTypeCount=c}});
+  const classesSorted=[...DATA.classes].sort((a,b)=>(+b.p||0)-(+a.p||0));
+  const topClass=classesSorted[0]||null;
+  const participationPct=computeLiveKpi("student_participation_pct")||0;
+  const avgPoints=computeLiveKpi("avg_points_participant")||0;
+  const kpiReadings=DATA.kpis.filter(k=>k.key).map(k=>{
+    const cur=computeLiveKpi(k.key);
+    const val=cur!==null?cur:(+k.cur||0);
+    const pct=+k.tgt?Math.min(100,Math.round((val/+k.tgt)*100)):0;
+    return{key:k.key,name:k.n,short:PULSE_KPI_SHORT[k.key]||k.n,val,tgt:+k.tgt||0,unit:k.unit||"",pct};
+  });
+  let weakest=null;
+  kpiReadings.forEach(k=>{if(!weakest||k.pct<weakest.pct)weakest=k});
+  return{ptsThis,ptsPrev,cntThis,cntPrev,growth,cntGrowth,topType,topTypeCount,topClass,participationPct,avgPoints,kpiReadings,weakest};
+}
+function trendArrow(v){
+  if(v>0)return{cls:"up",icon:"▲",txt:`+${v}%`};
+  if(v<0)return{cls:"down",icon:"▼",txt:`${v}%`};
+  return{cls:"flat",icon:"■",txt:"لا تغيّر"};
+}
+function renderPulseStats(p){
+  const g=trendArrow(p.growth);
+  const c=trendArrow(p.cntGrowth);
+  const stats=[
+    {label:"مبادرات هذا الأسبوع",val:p.cntThis,trend:c},
+    {label:"نقاط هذا الأسبوع",val:p.ptsThis,trend:g},
+    {label:"نسبة مشاركة الطلاب",val:p.participationPct+"%",trend:null},
+    {label:"متوسط نقاط الطالب المشارك",val:p.avgPoints,trend:null}
+  ];
+  document.getElementById("pulse-stats").innerHTML=stats.map(s=>`
+    <div class="pulse-stat ${s.trend?'trend-'+s.trend.cls:''}">
+      <div class="ps-label">${esc(s.label)}</div>
+      <div class="ps-val">${s.val}</div>
+      ${s.trend?`<span class="ps-trend ${s.trend.cls}">${s.trend.icon} ${s.trend.txt} عن الأسبوع الماضي</span>`:""}
+    </div>`).join("");
+}
+function generatePulseNarrative(p){
+  const today=new Date().toLocaleDateString("ar-SA-u-nu-latn",{year:"numeric",month:"long",day:"numeric"});
+  let s="";
+  if(p.cntThis===0){
+    s+=`لم تُسجَّل مبادرات معتمدة خلال السبعة أيام الماضية (حتى ${today})، `+
+       `مع أن سجل المنصة يحتفظ بـ${p.cntPrev} مبادرة في الأسبوع السابق. يُنصح بتنشيط باب المبادرات قبل الاجتماع القادم للجنة. `;
+  }else{
+    s+=`سجّلت لجنة التميز خلال الأسبوع المنتهي في ${today} عدد ${p.cntThis} مبادرة معتمدة `+
+       `بإجمالي ${p.ptsThis} نقطة، `;
+    if(p.cntPrev>0){
+      s+=p.cntGrowth>=0
+        ? `بارتفاع نسبته ${p.cntGrowth}% مقارنة بالأسبوع السابق، وهو مؤشر إيجابي على استمرارية الزخم. `
+        : `بانخفاض نسبته ${Math.abs(p.cntGrowth)}% مقارنة بالأسبوع السابق، ما يستدعي تنشيطًا إضافيًا للمشاركة. `;
+    }else{
+      s+=`وهي بداية جيدة لرصد الأداء الأسبوعي بشكل منتظم. `;
+    }
+    if(p.topType){
+      s+=`وقد تصدّر نمط «${p.topType}» المبادراتِ المسجّلة هذا الأسبوع (${p.topTypeCount} من أصل ${p.cntThis}). `;
+    }
+  }
+  s+=`أما على مستوى المشاركة العامة، فإن ${p.participationPct}% من الطلاب لديهم مشاركة فعلية موثقة، `+
+     `بمتوسط ${p.avgPoints} نقطة لكل طالب مشارك. `;
+  if(p.topClass&&(+p.topClass.p||0)>0){
+    s+=`ويتصدّر فصل «${p.topClass.n}» ترتيب الفصول برصيد ${p.topClass.p} نقطة حتى تاريخه.`;
+  }
+  return s;
+}
+function generatePulseReco(p){
+  if(!p.weakest)return"";
+  const w=p.weakest;
+  if(w.pct>=80){
+    return `👍 <b>ملاحظة:</b> جميع المؤشرات تسير ضمن المستهدف بشكل جيد، وأقربها لحاجة متابعة هو «${w.name}» بنسبة تحقق ${w.pct}%.`;
+  }
+  return `💡 <b>توصية آلية:</b> مؤشر «${w.name}» هو الأدنى تحقيقًا للمستهدف حاليًا (${w.val} من ${w.tgt} ${w.unit} — ${w.pct}%). `+
+         `يُقترح تخصيص جزء من الاجتماع القادم للجنة لمناقشة إجراءات عاجلة لرفع هذا المؤشر قبل موعد المراجعة الفصلية.`;
+}
+function renderPulseRadar(p){
+  if(typeof Chart==="undefined")return;
+  const el=document.getElementById("pulse-radar-canvas");
+  if(!el||!p.kpiReadings.length)return;
+  if(chartPulseRadar)chartPulseRadar.destroy();
+  Chart.defaults.font.family="'Tajawal',Tahoma,sans-serif";
+  chartPulseRadar=new Chart(el.getContext("2d"),{
+    type:"radar",
+    data:{
+      labels:p.kpiReadings.map(k=>k.short),
+      datasets:[{
+        label:"نسبة تحقق المستهدف",
+        data:p.kpiReadings.map(k=>k.pct),
+        backgroundColor:"rgba(232,160,32,.28)",
+        borderColor:"#c9820a",
+        borderWidth:2.5,
+        pointBackgroundColor:"#0b3d2e",
+        pointBorderColor:"#fff",
+        pointRadius:4
+      }]
+    },
+    options:{
+      responsive:true,
+      animation:{duration:800,easing:"easeOutCubic"},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:"#0b3d2e",padding:10,cornerRadius:10,rtl:true,titleAlign:"right",bodyAlign:"right"}},
+      scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:"transparent",font:{size:10}},grid:{color:"rgba(23,97,74,.12)"},angleLines:{color:"rgba(23,97,74,.15)"},pointLabels:{font:{size:12,weight:"800"},color:"#1e3a34"}}}
+    }
+  });
+}
+let lastPulseData=null;
+function renderPulse(){
+  const p=computePulseData();
+  lastPulseData=p;
+  renderPulseStats(p);
+  document.getElementById("pulse-narrative").textContent=generatePulseNarrative(p);
+  document.getElementById("pulse-reco").innerHTML=generatePulseReco(p);
+  document.getElementById("pulse-updated").textContent="آخر تحديث: "+new Date().toLocaleString("ar-SA-u-nu-latn",{dateStyle:"medium",timeStyle:"short"});
+  renderPulseRadar(p);
+}
+function printPulseReport(){
+  const p=lastPulseData||computePulseData();
+  const today=new Date().toLocaleDateString("ar-SA-u-nu-latn",{year:"numeric",month:"long",day:"numeric"});
+  const head=(DATA.org||[]).find(o=>+o.lvl===1);
+  const coord=(DATA.org||[]).find(o=>+o.lvl===2)||(DATA.org||[]).find(o=>/حمدان/.test(o.n||""));
+  const radarImg=chartPulseRadar?chartPulseRadar.toBase64Image():"";
+  const narrative=generatePulseNarrative(p);
+  const reco=generatePulseReco(p).replace(/<\/?b>/g,"");
+  const w=window.open("","_blank");
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير نبض التميز — ${esc(today)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+  @page{size:A4 portrait;margin:16mm 14mm}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Tajawal',Tahoma,sans-serif;color:#1e3a34;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rhead{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #e8a020;padding-bottom:14px;margin-bottom:22px}
+  .rhead .badge{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0b3d2e,#17614a);color:#fdeec9;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;border:2px solid #e8a020}
+  .rhead h1{font-size:19px;font-weight:900;color:#0b3d2e}
+  .rhead .kicker{font-size:11.5px;color:#7d938c;margin-top:3px}
+  .rtitle{background:linear-gradient(135deg,#0b3d2e,#12503c);color:#fff;padding:12px 18px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-weight:900;font-size:15px}
+  .rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .rstat{border:1px solid #e3e9e6;border-radius:10px;padding:10px 8px;text-align:center}
+  .rstat .v{font-size:20px;font-weight:900;color:#12503c}
+  .rstat .l{font-size:10px;color:#7d938c;font-weight:700;margin-top:3px}
+  .rsec{margin-bottom:20px}
+  .rsec h2{font-size:14px;font-weight:900;color:#0b3d2e;margin-bottom:8px;border-right:4px solid #e8a020;padding-right:8px}
+  .rnarr{font-size:12.5px;line-height:2;background:#f2faf5;border:1px solid #e3e9e6;border-radius:10px;padding:14px 16px}
+  .rreco{font-size:11.5px;line-height:1.9;background:#fdf3dd;border:1px solid #f0dba8;border-radius:10px;padding:12px 14px;margin-top:10px;color:#7a5a08;font-weight:700}
+  .rradar{text-align:center;margin-top:6px}
+  .rradar img{max-width:340px}
+  .rfoot{display:flex;justify-content:space-between;margin-top:34px;font-size:11px;color:#7d938c}
+  .rfoot .sig{text-align:center;width:45%;border-top:1px solid #cfd9d5;padding-top:6px}
+  </style></head><body>
+  <div class="rhead">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="badge">ر</div>
+      <div>
+        <h1>مدرسة أبي بكر الرازي الابتدائية بينبع</h1>
+        <div class="kicker">المملكة العربية السعودية • إدارة التعليم بمحافظة ينبع</div>
+      </div>
+    </div>
+    <div class="kicker">${esc(today)}</div>
+  </div>
+  <div class="rtitle">💓 تقرير نبض التميز الأسبوعي — منصة التميز</div>
+  <div class="rstats">
+    <div class="rstat"><div class="v">${p.cntThis}</div><div class="l">مبادرات هذا الأسبوع</div></div>
+    <div class="rstat"><div class="v">${p.ptsThis}</div><div class="l">نقاط هذا الأسبوع</div></div>
+    <div class="rstat"><div class="v">${p.participationPct}%</div><div class="l">نسبة مشاركة الطلاب</div></div>
+    <div class="rstat"><div class="v">${p.avgPoints}</div><div class="l">متوسط نقاط المشارك</div></div>
+  </div>
+  <div class="rsec">
+    <h2>القراءة التحليلية</h2>
+    <div class="rnarr">${esc(narrative)}</div>
+    ${reco?`<div class="rreco">${esc(reco)}</div>`:""}
+  </div>
+  <div class="rsec">
+    <h2>مؤشر النبض المؤسسي</h2>
+    <div class="rradar">${radarImg?`<img src="${radarImg}">`:'<div style="font-size:11px;color:#999">لا تتوفر بيانات كافية للرسم البياني</div>'}</div>
+  </div>
+  <div class="rfoot">
+    <div class="sig">${esc(coord?coord.n:"أ. حمدان عمار المحياوي")}<br>مقرر لجنة التميز المدرسي</div>
+    <div class="sig">${esc(head?head.n:"قائد المدرسة")}<br>المشرف العام على لجنة التميز</div>
+  </div>
+  <scr`+`ipt>window.onload=()=>setTimeout(()=>window.print(),700)<\/scr`+`ipt>
+  </body></html>`);
+  w.document.close();
+}
 function renderLog(){
   return;
 }
@@ -2645,7 +2885,6 @@ initGallery();
 </body>
 </html>
  
-
 
 
 
