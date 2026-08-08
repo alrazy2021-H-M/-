@@ -1,0 +1,22 @@
+{
+  "name": "منصة التميز — مدرسة أبي بكر الرازي الابتدائية بينبع",
+  "short_name": "منصة التميز",
+  "description": "منصة التميز الرقمية للجنة التميز المدرسي بمدرسة أبي بكر الرازي الابتدائية بينبع",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7f6",
+  "theme_color": "#0b3d2e",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "icons/favicon-16.png", "sizes": "16x16", "type": "image/png" },
+    { "src": "icons/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "icons/icon-167.png", "sizes": "167x167", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
