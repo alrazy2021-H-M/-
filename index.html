@@ -614,6 +614,7 @@ nav.tabs button:hover{transform:translateY(-2px)}
   <div class="section-head" style="margin-top:34px">
     <h2 style="font-size:17px"><span class="em">🖼</span> الشهادات الموثقة (صور)</h2>
     <button class="add-btn admin-only" onclick="openCertUpload()">＋ رفع شهادات مصورة</button>
+    <button class="add-btn admin-only" style="border-color:#f3c1c1;color:#c0392b" onclick="openCertDelete()" title="حذف شهادات مصورة">🗑 حذف شهادات مصورة</button>
     <p class="sub">شهادات الشكر الممسوحة أو المصورة — تُعرض تلقائيًا من مجلد certificates في مستودع المنصة</p>
   </div>
   <div class="gal-grid" id="cert-photo-grid"></div>
@@ -1439,6 +1440,10 @@ function openGalAdd(){
 function openCertUpload(){
   if(!loggedIn){openLogin();return}
   window.open(`https://github.com/${GH.owner}/${GH.repo}/upload/main/${GH.certsDir}`,"_blank");
+}
+function openCertDelete(){
+  if(!loggedIn){openLogin();return}
+  window.open(`https://github.com/${GH.owner}/${GH.repo}/tree/main/${GH.certsDir}`,"_blank");
 }
 function openGalDelete(){
   if(!loggedIn){openLogin();return}
