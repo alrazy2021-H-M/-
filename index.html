@@ -562,7 +562,15 @@ body:not(.locked) #gate{display:none!important}
   .cert-bar{display:none!important}
   .cert-stage{display:block!important;padding:0!important;overflow:visible!important}
   .cert-holder{width:auto!important;height:auto!important;position:static!important}
-  .cert-sheet{position:static!important;transform:none!important;box-shadow:none!important;margin:0!important}
+  /* مهم: تبقى الورقة relative حتى تظل هي المرجع لتموضع الاسم والتاريخ (%)
+     لو صارت static يُحسب الـ top% من حجم صفحة الطباعة فينزل الاسم للأسفل */
+  .cert-sheet{
+    position:relative!important;
+    top:auto!important;right:auto!important;left:auto!important;bottom:auto!important;
+    width:297mm!important;height:198.2mm!important;
+    transform:none!important;box-shadow:none!important;margin:0!important;
+  }
+  .cert-sheet .name-slot,.cert-sheet .date-slot{position:absolute!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
 </style>
@@ -2751,11 +2759,3 @@ initGallery();
  
 </body>
 </html>
- 
-
-
-
-
-
-
-
