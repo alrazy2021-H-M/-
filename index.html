@@ -1,3 +1,6 @@
+
+
+الفهرس · HTML
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -533,7 +536,8 @@ body:not(.locked) #gate{display:none!important}
     <h2>منصة التميز<br>مدرسة أبي بكر الرازي الابتدائية بينبع</h2>
     <p>هذه المنصة مخصصة لمنسوبي المدرسة وأولياء الأمور.<br>أدخل رمز الدخول للمتابعة.</p>
     <div class="gate-err" id="gate-err">✖ الرمز غير صحيح، حاول مرة أخرى.</div>
-    <input id="gate-code" type="text" inputmode="text" autocomplete="off" placeholder="رمز الدخول">
+    <input id="gate-user" type="text" name="username" autocomplete="username" value="منصة الرازي" readonly style="display:none">
+    <input id="gate-code" type="password" name="password" autocomplete="current-password" placeholder="رمز الدخول">
     <button class="gate-btn" onclick="checkGate()">دخول المنصة</button>
     <div class="gate-note">للحصول على الرمز تواصل مع إدارة المدرسة</div>
   </div>
@@ -544,7 +548,6 @@ var GATE_CODE="razi1448";
 function checkGate(){
   var v=(document.getElementById("gate-code").value||"").trim();
   if(v===GATE_CODE){
-    try{localStorage.setItem("razi_gate",GATE_CODE)}catch(e){}
     document.body.classList.remove("locked");
   }else{
     document.getElementById("gate-err").style.display="block";
@@ -553,15 +556,9 @@ function checkGate(){
   }
 }
 (function(){
-  var saved=null;
-  try{saved=localStorage.getItem("razi_gate")}catch(e){}
-  if(saved===GATE_CODE){
-    document.body.classList.remove("locked");
-  }else{
-    var inp=document.getElementById("gate-code");
-    inp.addEventListener("keydown",function(e){if(e.key==="Enter")checkGate()});
-    setTimeout(function(){inp.focus()},200);
-  }
+  var inp=document.getElementById("gate-code");
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter")checkGate()});
+  setTimeout(function(){inp.focus()},200);
 })();
 </script>
  
@@ -2684,28 +2681,3 @@ initGallery();
 </script>
 </body>
 </html>
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
