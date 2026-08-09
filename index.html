@@ -20,7 +20,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
   --green-900:#0b3d2e; --green-800:#12503c; --green-700:#17614a;
@@ -522,6 +522,49 @@ body:not(.locked) #gate{display:none!important}
 }
 .gate-err{display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:9px 12px;border-radius:10px;margin-bottom:12px}
 .gate-note{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:14px;line-height:1.8}
+ 
+/* ====== 📜 عارض الشهادة داخل الصفحة (يعمل على الآيفون) ====== */
+.cert-view{position:fixed;inset:0;z-index:90;background:#0b3d2e;display:none;flex-direction:column}
+.cert-view.open{display:flex}
+.cert-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid rgba(232,160,32,.5);
+}
+.cert-bar button{font-family:inherit;font-weight:900;font-size:14px;padding:11px 20px;border-radius:12px;border:none;cursor:pointer}
+.cert-back{background:#fff;color:var(--green-900);box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.cert-do-print{background:linear-gradient(180deg,var(--gold),var(--gold-dark));color:#3a2800;box-shadow:0 3px 12px rgba(232,160,32,.45)}
+.cert-hint{font-size:11.5px;font-weight:700;color:#cfe6da;text-align:center;padding:0 8px}
+.cert-stage{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;-webkit-overflow-scrolling:touch}
+.cert-holder{position:relative;flex-shrink:0}
+.cert-sheet{
+  position:absolute;top:0;right:0;transform-origin:top right;
+  width:297mm;height:198.2mm;overflow:hidden;
+  background:#fff url("cert-bg.jpg") center/100% 100% no-repeat;
+  box-shadow:0 12px 44px rgba(0,0,0,.5);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.cert-sheet .name-slot{
+  position:absolute;left:50%;top:36.9%;transform:translate(-50%,-50%);
+  width:58%;text-align:center;font-family:"Aref Ruqaa",Tahoma,sans-serif;
+  font-weight:700;color:#13315c;letter-spacing:.5px;white-space:nowrap;overflow:hidden;
+}
+.cert-sheet .date-slot{
+  position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
+  font-family:Tahoma,sans-serif;font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
+}
+@media(max-width:520px){.cert-hint{display:none}.cert-bar button{padding:10px 14px;font-size:13px}}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body>*{display:none!important}
+  body>.cert-view.open{display:block!important;position:static!important;background:#fff!important;inset:auto!important}
+  .cert-bar{display:none!important}
+  .cert-stage{display:block!important;padding:0!important;overflow:visible!important}
+  .cert-holder{width:auto!important;height:auto!important;position:static!important}
+  .cert-sheet{position:static!important;transform:none!important;box-shadow:none!important;margin:0!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
 </style>
 </head>
 <body class="locked">
@@ -1782,51 +1825,65 @@ async function saveQuickEdit(kind,i){
   if(!ok)alert("⚠ تعذر حفظ التعديل — تحقق من الاتصال بالإنترنت وحاول مجددًا");
 }
  
-/* قالب شهادة فرسان التميز — تصميم مبني بالكامل بلغة CSS (لا يعتمد على أي صورة خارجية)
-   لضمان طباعة موثوقة على جميع الأجهزة بما فيها آيفون/آيباد */
+/* ============================================================
+   📜 عارض الشهادة داخل الصفحة (بدل النافذة الجديدة)
+   يعمل على الآيفون: زر رجوع واضح + إيماءة السحب للخلف
+   ============================================================ */
+let CERT_SHEET_W=0,CERT_SHEET_H=0;
+function fitCertSheet(){
+  const stage=document.getElementById("cert-stage");
+  const holder=document.getElementById("cert-holder");
+  const sheet=document.getElementById("cert-sheet");
+  if(!stage||!sheet||!holder)return;
+  if(!CERT_SHEET_W){
+    sheet.style.transform="none";
+    holder.style.width="auto";holder.style.height="auto";
+    CERT_SHEET_W=sheet.offsetWidth;CERT_SHEET_H=sheet.offsetHeight;
+  }
+  if(!CERT_SHEET_W||!CERT_SHEET_H)return;
+  const aw=stage.clientWidth-24, ah=stage.clientHeight-24;
+  let s=Math.min(aw/CERT_SHEET_W, ah/CERT_SHEET_H);
+  if(!isFinite(s)||s<=0)s=1;
+  sheet.style.transform="scale("+s+")";
+  holder.style.width=(CERT_SHEET_W*s)+"px";
+  holder.style.height=(CERT_SHEET_H*s)+"px";
+}
 function printCert(i){
   const c=DATA.certs[i];
   if(!c)return;
   const today=new Date().toLocaleDateString("ar-SA-u-nu-latn",{year:"numeric",month:"long",day:"numeric"});
   const nameLen=(c.name||"").length;
   const nameFs=nameLen>26?9:nameLen>20?10.5:nameLen>15?12:14;
-  const w=window.open("","_blank");
-  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>شهادة فرسان للتميز — ${esc(c.name)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
-  <style>
-  @page{size:A4 landscape;margin:0}
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Tahoma,sans-serif;width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;background:#e9ede9;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .sheet{
-    width:297mm;height:198.2mm;position:relative;overflow:hidden;
-    background-image:url(https://alrazy2021-H-M.github.io/-/cert-bg.jpg);
-    background-size:100% 100%;background-position:center;background-repeat:no-repeat;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;
-  }
-  .name-slot{
-    position:absolute;left:50%;top:36.9%;transform:translate(-50%,-50%);
-    width:58%;text-align:center;
-    font-family:"Aref Ruqaa",Tahoma,sans-serif;
-    font-weight:700;font-size:${nameFs}mm;color:#13315c;letter-spacing:.5px;
-    white-space:nowrap;overflow:hidden;
-  }
-  .date-slot{
-    position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
-    font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
-  }
-  @media print{
-    body{background:#fff}
-    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  }
-  </style></head><body>
-  <div class="sheet">
-    <div class="name-slot">${esc(c.name)}</div>
-    <div class="date-slot">📅 ${esc(c.d||today)}</div>
-  </div>
-  <scr`+`ipt>window.onload=()=>setTimeout(()=>window.print(),600)<\/scr`+`ipt>
-  </body></html>`);
-  w.document.close();
+  const nameEl=document.getElementById("cert-name");
+  nameEl.textContent=c.name||"";
+  nameEl.style.fontSize=nameFs+"mm";
+  document.getElementById("cert-date").textContent="📅 "+(c.d||today);
+  document.getElementById("cert-view").classList.add("open");
+  document.body.style.overflow="hidden";
+  setTimeout(fitCertSheet,30);
+  try{history.pushState({certView:true},"")}catch(e){}
 }
+function closeCertView(fromPop){
+  const v=document.getElementById("cert-view");
+  if(!v||!v.classList.contains("open"))return;
+  v.classList.remove("open");
+  document.body.style.overflow="";
+  if(!fromPop){
+    try{ if(history.state&&history.state.certView)history.back(); }catch(e){}
+  }
+}
+function doPrintCert(){
+  setTimeout(function(){
+    try{window.print()}catch(e){alert("تعذّر فتح نافذة الطباعة على هذا الجهاز.")}
+  },60);
+}
+window.addEventListener("popstate",function(){closeCertView(true)});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeCertView()});
+window.addEventListener("resize",function(){
+  const v=document.getElementById("cert-view");
+  if(v&&v.classList.contains("open"))fitCertSheet();
+});
+window.addEventListener("orientationchange",function(){setTimeout(fitCertSheet,250)});
  
  
 function computeLiveKpi(key){
@@ -2676,5 +2733,29 @@ window.addEventListener("unhandledrejection",e=>{
 renderAll();
 initGallery();
 </script>
+<div class="cert-view" id="cert-view">
+  <div class="cert-bar">
+    <button class="cert-back" onclick="closeCertView()">‹ رجوع للمنصة</button>
+    <span class="cert-hint">بعد الطباعة أو الحفظ اضغط «رجوع للمنصة»</span>
+    <button class="cert-do-print" onclick="doPrintCert()">🖨 طباعة / حفظ PDF</button>
+  </div>
+  <div class="cert-stage" id="cert-stage">
+    <div class="cert-holder" id="cert-holder">
+      <div class="cert-sheet" id="cert-sheet">
+        <div class="name-slot" id="cert-name"></div>
+        <div class="date-slot" id="cert-date"></div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
 </body>
 </html>
+ 
+
+
+
+
+
+
+
