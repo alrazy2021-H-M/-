@@ -493,9 +493,77 @@ nav.tabs button:hover{transform:translateY(-2px)}
 .ai-spin{width:16px;height:16px;border-radius:50%;border:2.5px solid #d9cdf7;border-top-color:#6a4bd8;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ai-use-btn{background:linear-gradient(135deg,#6a4bd8,#9a5ff0);color:#fff;font-weight:800;padding:9px 18px;border-radius:10px}
+ 
+/* ====== شاشة رمز الدخول العام (تظهر قبل المحتوى) ====== */
+body.locked>header.top,body.locked>main,body.locked>footer{display:none!important}
+body:not(.locked) #gate{display:none!important}
+#gate{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:
+    radial-gradient(900px 400px at 20% -10%, rgba(232,160,32,.22), transparent 60%),
+    linear-gradient(135deg,var(--green-900),var(--green-800) 60%,#0e4534);
+}
+.gate-card{
+  background:#fff;border-radius:20px;max-width:400px;width:100%;padding:30px 26px;text-align:center;
+  box-shadow:0 24px 70px rgba(0,0,0,.35);border:2px solid var(--gold);
+}
+.gate-logo{width:104px;height:70px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+.gate-logo img{width:100%;height:100%;object-fit:contain}
+.gate-card h2{font-size:18px;font-weight:900;color:var(--green-900);line-height:1.6}
+.gate-card p{font-size:13px;color:var(--muted);font-weight:700;line-height:1.9;margin:8px 0 18px}
+.gate-card input{
+  width:100%;font-family:inherit;font-size:17px;font-weight:800;text-align:center;letter-spacing:1px;
+  padding:13px;border:2px solid var(--line);border-radius:12px;margin-bottom:12px;background:#fbfdfc;color:var(--ink);
+}
+.gate-card input:focus{outline:none;border-color:var(--gold);background:#fff}
+.gate-btn{
+  width:100%;background:linear-gradient(180deg,var(--gold),var(--gold-dark));color:#3a2800;
+  font-weight:900;font-size:15px;padding:13px;border-radius:12px;box-shadow:0 6px 16px rgba(232,160,32,.4);
+}
+.gate-err{display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:9px 12px;border-radius:10px;margin-bottom:12px}
+.gate-note{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:14px;line-height:1.8}
 </style>
 </head>
-<body>
+<body class="locked">
+ 
+<!-- ====== شاشة رمز الدخول العام ====== -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo"><img src="moe-logo.png" alt="شعار وزارة التعليم" onerror="this.style.display='none'"></div>
+    <h2>منصة التميز<br>مدرسة أبي بكر الرازي الابتدائية بينبع</h2>
+    <p>هذه المنصة مخصصة لمنسوبي المدرسة وأولياء الأمور.<br>أدخل رمز الدخول للمتابعة.</p>
+    <div class="gate-err" id="gate-err">✖ الرمز غير صحيح، حاول مرة أخرى.</div>
+    <input id="gate-code" type="text" inputmode="text" autocomplete="off" placeholder="رمز الدخول">
+    <button class="gate-btn" onclick="checkGate()">دخول المنصة</button>
+    <div class="gate-note">للحصول على الرمز تواصل مع إدارة المدرسة</div>
+  </div>
+</div>
+<script>
+/* ====== رمز الدخول العام — يُغيَّر من هذا السطر فقط ====== */
+var GATE_CODE="razi1448";
+function checkGate(){
+  var v=(document.getElementById("gate-code").value||"").trim();
+  if(v===GATE_CODE){
+    try{localStorage.setItem("razi_gate",GATE_CODE)}catch(e){}
+    document.body.classList.remove("locked");
+  }else{
+    document.getElementById("gate-err").style.display="block";
+    document.getElementById("gate-code").value="";
+    document.getElementById("gate-code").focus();
+  }
+}
+(function(){
+  var saved=null;
+  try{saved=localStorage.getItem("razi_gate")}catch(e){}
+  if(saved===GATE_CODE){
+    document.body.classList.remove("locked");
+  }else{
+    var inp=document.getElementById("gate-code");
+    inp.addEventListener("keydown",function(e){if(e.key==="Enter")checkGate()});
+    setTimeout(function(){inp.focus()},200);
+  }
+})();
+</script>
  
 <header class="top">
   <div class="hdr-orb o1"></div>
@@ -2617,6 +2685,20 @@ initGallery();
 </body>
 </html>
  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
