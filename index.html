@@ -1,3 +1,6 @@
+
+
+الفهرس · HTML
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -790,7 +793,7 @@ function checkGate(){
     <span class="saved-msg" id="saved-msg">✔ تم الحفظ وتحديث اللوحات</span>
   </div>
   <div style="margin-top:26px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;max-width:480px">
-    <div style="font-weight:900;font-size:15px;margin-bottom:10px">🔐 تغيير كلمة مرور البوابة</div>
+    <div style="font-weight:900;font-size:15px;margin-bottom:10px">🔐 تغيير كلمة مرور لوحة الإدارة</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input id="new-pass" type="password" placeholder="كلمة المرور الجديدة" style="flex:1;min-width:180px;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px">
       <button class="save-btn" onclick="changePass()">تحديث</button>
@@ -880,7 +883,7 @@ function checkGate(){
     <p style="font-size:13.5px;color:var(--muted);line-height:1.9;margin-bottom:16px">هذه البوابة مخصصة للجنة التميز المدرسي لإدارة الأسماء والنقاط واالمبادرات.</p>
     <label>كلمة المرور</label>
     <input id="login-pass" type="password" placeholder="أدخل كلمة المرور" onkeydown="if(event.key==='Enter')doLogin()">
-    <div id="login-err" style="display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:14px">✖ كلمة المرور غير صحيحة، حاول مرة أخرى.</div>
+    <div id="login-err" style="display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:14px">كلمة المرور غير صحيحة.</div>
     <div class="actions">
       <button class="save" onclick="doLogin()">دخول</button>
       <button class="cancel" onclick="closeLogin()">إلغاء</button>
@@ -968,6 +971,7 @@ function checkGate(){
  
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <script>
 /* ====== ربط Firebase (قاعدة البيانات المشتركة لجميع الزوار) ====== */
@@ -982,6 +986,10 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
+/* بريد حساب الإدارة في Firebase Authentication — ليس سرًا، السر هو كلمة المرور فقط */
+const ADMIN_EMAIL = "admin@razi-platform.local";
+try{ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); }catch(e){}
  
 /* ====== أسباب منح النقاط للفصل كاملًا ====== */
 const CLASS_REASONS=[
@@ -1073,7 +1081,7 @@ gallery:[]
 };
  
 let DATA=JSON.parse(JSON.stringify(DEFAULTS));
-let PASS="1448";
+/* لم تعد كلمة المرور موجودة في الكود ولا في قاعدة البيانات — التحقق يتم عبر Firebase Authentication */
 let loggedIn=false;
 let firebaseReady=false;
  
@@ -1138,11 +1146,10 @@ function isEditingAdmin(){
 db.ref("platform").on("value",snap=>{
   const val=snap.val();
   if(!val||!val.data){
-    db.ref("platform").set({data:DEFAULTS,pass:PASS});
+    db.ref("platform").set({data:DEFAULTS});
     return;
   }
   firebaseReady=true;
-  if(val.pass)PASS=String(val.pass);
   if(!isEditingAdmin()){
     DATA=normalizeData(val.data);
     renderAll();
@@ -1159,6 +1166,7 @@ function portalClick(){
   }
 }
 function logoutUser(){
+  try{ auth.signOut(); }catch(e){}
   loggedIn=false;
   document.body.classList.remove("logged");
   document.getElementById("portal-btn").textContent="🔑 دخول لجنة التميز";
@@ -1172,29 +1180,46 @@ function openLogin(){
   setTimeout(()=>document.getElementById("login-pass").focus(),100);
 }
 function closeLogin(){document.getElementById("login-overlay").classList.remove("open")}
-function doLogin(){
-  if(document.getElementById("login-pass").value===PASS){
+async function doLogin(){
+  const inp=document.getElementById("login-pass");
+  const err=document.getElementById("login-err");
+  const pw=(inp.value||"").trim();
+  if(!pw){err.textContent="فضلاً أدخل كلمة المرور.";err.style.display="block";return}
+  err.style.display="none";
+  inp.disabled=true;
+  try{
+    await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pw);
     loggedIn=true;
     document.body.classList.add("logged");
     closeLogin();
     document.getElementById("portal-btn").textContent="⚙️ لوحة الإدارة والتعديل";
     renderAll();
     goView("admin");
-  }else{
-    document.getElementById("login-err").style.display="block";
+  }catch(e){
+    const c=(e&&e.code)||"";
+    let msg="كلمة المرور غير صحيحة.";
+    if(c==="auth/too-many-requests")msg="تم إيقاف المحاولات مؤقتًا لكثرة الأخطاء — انتظر قليلاً.";
+    else if(c==="auth/network-request-failed")msg="تعذّر الاتصال بالإنترنت.";
+    else if(c==="auth/user-not-found"||c==="auth/operation-not-allowed")msg="حساب الإدارة غير مُهيَّأ في Firebase Authentication.";
+    err.textContent=msg;
+    err.style.display="block";
+  }finally{
+    inp.disabled=false;
   }
 }
 async function changePass(){
   const v=document.getElementById("new-pass").value.trim();
-  if(v.length<4){alert("فضلاً اختر كلمة مرور من 4 خانات فأكثر.");return}
-  PASS=v;
+  if(v.length<6){alert("فضلاً اختر كلمة مرور من 6 خانات فأكثر (شرط Firebase).");return}
   const m=document.getElementById("pass-msg");
   try{
-    await db.ref("platform/pass").set(v);
-    m.textContent="✔ تم تحديث كلمة المرور وحفظها بشكل دائم";
+    if(!auth.currentUser)throw new Error("no-user");
+    await auth.currentUser.updatePassword(v);
+    m.textContent="✔ تم تحديث كلمة المرور في Firebase Authentication";
     m.style.background="#e2f5e9";m.style.color="#1a7a43";
   }catch(e){
-    m.textContent="⚠ تعذر الحفظ — تحقق من الاتصال بالإنترنت وحاول مجددًا";
+    m.textContent=((e&&e.code)==="auth/requires-recent-login")
+      ? "⚠ سجّل الخروج ثم ادخل مجددًا قبل تغيير كلمة المرور"
+      : "⚠ تعذر التحديث — تحقق من الاتصال أو اختر كلمة مرور أقوى (6 خانات فأكثر)";
     m.style.background="#fdf3dd";m.style.color="#a77410";
   }
   document.getElementById("new-pass").value="";
@@ -2817,12 +2842,3 @@ initGallery();
  
 </body>
 </html>
- 
- 
- 
- 
- 
- 
- 
- 
- 
