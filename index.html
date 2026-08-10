@@ -1,3 +1,6 @@
+
+
+الفهرس · HTML
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -535,6 +538,8 @@ body:not(.locked) #gate{display:none!important}
 .cert-bar button{font-family:inherit;font-weight:900;font-size:14px;padding:11px 20px;border-radius:12px;border:none;cursor:pointer}
 .cert-back{background:#fff;color:var(--green-900);box-shadow:0 3px 10px rgba(0,0,0,.25)}
 .cert-do-print{background:linear-gradient(180deg,var(--gold),var(--gold-dark));color:#3a2800;box-shadow:0 3px 12px rgba(232,160,32,.45)}
+.cert-do-img{background:linear-gradient(180deg,#2fa36b,#1c7a4c);color:#fff;box-shadow:0 3px 12px rgba(28,122,76,.45)}
+.cert-do-img[disabled]{opacity:.6}
 .cert-hint{font-size:11.5px;font-weight:700;color:#cfe6da;text-align:center;padding:0 8px}
 .cert-stage{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;-webkit-overflow-scrolling:touch}
 .cert-holder{position:relative;flex-shrink:0}
@@ -554,21 +559,26 @@ body:not(.locked) #gate{display:none!important}
   position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
   font-family:Tahoma,sans-serif;font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
 }
-@media(max-width:520px){.cert-hint{display:none}.cert-bar button{padding:10px 14px;font-size:13px}}
+@media(max-width:560px){.cert-hint{display:none}.cert-bar{gap:8px}.cert-bar button{padding:10px 12px;font-size:12.5px}}
 @media print{
   @page{size:A4 landscape;margin:0}
   body>*{display:none!important}
   body>.cert-view.open{display:block!important;position:static!important;background:#fff!important;inset:auto!important}
   .cert-bar{display:none!important}
-  .cert-stage{display:block!important;padding:0!important;overflow:visible!important}
-  .cert-holder{width:auto!important;height:auto!important;position:static!important}
-  /* مهم: تبقى الورقة relative حتى تظل هي المرجع لتموضع الاسم والتاريخ (%)
-     لو صارت static يُحسب الـ top% من حجم صفحة الطباعة فينزل الاسم للأسفل */
+  .cert-stage{display:block!important;padding:0!important;overflow:visible!important;text-align:center!important}
+  /* إطار مقصوص بعرض 280مم ليدخل داخل المساحة القابلة للطباعة في A4 أفقي
+     (سفاري الآيفون يضيف هوامش افتراضية، فكان عرض 297مم يُقص من الجهة اليسرى) */
+  .cert-holder{
+    position:relative!important;width:280mm!important;height:186.8mm!important;
+    overflow:hidden!important;margin:0 auto!important;display:inline-block!important;
+  }
+  /* تبقى الورقة absolute داخل الإطار حتى تظل مرجع تموضع الاسم والتاريخ (%)
+     والتصغير عبر transform يحافظ على تناسب كل العناصر والخطوط */
   .cert-sheet{
-    position:relative!important;
-    top:auto!important;right:auto!important;left:auto!important;bottom:auto!important;
+    position:absolute!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;
     width:297mm!important;height:198.2mm!important;
-    transform:none!important;box-shadow:none!important;margin:0!important;
+    transform:scale(.9428)!important;transform-origin:top left!important;
+    box-shadow:none!important;margin:0!important;
   }
   .cert-sheet .name-slot,.cert-sheet .date-slot{position:absolute!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -1885,6 +1895,63 @@ function doPrintCert(){
     try{window.print()}catch(e){alert("تعذّر فتح نافذة الطباعة على هذا الجهاز.")}
   },60);
 }
+/* حفظ الشهادة كصورة PNG بمقاس عالي الدقة — لا يعتمد على محرك الطباعة في سفاري */
+async function saveCertImage(){
+  const btn=document.getElementById("cert-img-btn");
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.innerHTML="⏳ جارٍ التجهيز…";btn.disabled=true;}
+  try{
+    const W=3070,H=2048;          // ضعف مقاس cert-bg.jpg (1535×1024)
+    const MM=W/297;               // بكسل لكل مليمتر بنفس مقاييس ورقة الشهادة
+    const cv=document.createElement("canvas");cv.width=W;cv.height=H;
+    const ctx=cv.getContext("2d");
+    const img=new Image();
+    await new Promise(function(ok,no){
+      img.onload=ok;img.onerror=function(){no(new Error("bg"))};img.src="cert-bg.jpg";
+    });
+    ctx.drawImage(img,0,0,W,H);
+ 
+    const nameEl=document.getElementById("cert-name");
+    const nameTxt=(nameEl.textContent||"").trim();
+    const nameMm=parseFloat(nameEl.style.fontSize)||14;
+    const namePx=nameMm*MM;
+    try{
+      await document.fonts.load('700 '+Math.round(namePx)+'px "Aref Ruqaa"');
+      await document.fonts.ready;
+    }catch(e){}
+ 
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillStyle="#13315c";
+    ctx.font='700 '+namePx+'px "Aref Ruqaa", Tahoma, sans-serif';
+    ctx.fillText(nameTxt,W*0.5,H*0.369);
+ 
+    ctx.font='800 '+(3.4*MM)+'px Tahoma, sans-serif';
+    ctx.fillStyle="#5c5346";
+    ctx.fillText((document.getElementById("cert-date").textContent||"").trim(),W*0.53,H*0.90);
+ 
+    const blob=await new Promise(function(r){cv.toBlob(r,"image/png")});
+    if(!blob)throw new Error("blob");
+    const safe=(nameTxt||"تميز").replace(/[\\/:*?"<>|]/g,"").slice(0,40);
+    const fname="شهادة-"+safe+".png";
+ 
+    try{
+      const file=new File([blob],fname,{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"شهادة فرسان للتميز"});
+        return;
+      }
+    }catch(e){ if(e&&e.name==="AbortError")return; }
+ 
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=fname;a.rel="noopener";
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},5000);
+  }catch(e){
+    alert("تعذّر إنشاء صورة الشهادة على هذا الجهاز. استخدم زر الطباعة بدلاً منها.");
+  }finally{
+    if(btn){btn.innerHTML=old;btn.disabled=false;}
+  }
+}
 window.addEventListener("popstate",function(){closeCertView(true)});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeCertView()});
 window.addEventListener("resize",function(){
@@ -2636,13 +2703,6 @@ function useAiCertText(){
   persist();renderAll();
   goView("certs");
 }
- 
-/* ============================================================
-   🔊 نظام أصوات النقر للمنصة (JavaScript فقط — بدون ملفات صوتية)
-   يعتمد على Web Audio API لتوليد نغمات نقر خفيفة فوريًا،
-   مع تفعيل السياق الصوتي تلقائيًا عند أول تفاعل من المستخدم
-   (متطلب من المتصفحات لتشغيل الصوت).
-   ============================================================ */
 const ClickSound=(function(){
   let ctx=null;
   let enabled=true;
@@ -2744,8 +2804,9 @@ initGallery();
 <div class="cert-view" id="cert-view">
   <div class="cert-bar">
     <button class="cert-back" onclick="closeCertView()">‹ رجوع للمنصة</button>
-    <span class="cert-hint">بعد الطباعة أو الحفظ اضغط «رجوع للمنصة»</span>
-    <button class="cert-do-print" onclick="doPrintCert()">🖨 طباعة / حفظ PDF</button>
+    <span class="cert-hint">للآيفون: «حفظ كصورة» أدق نتيجة — أو اختر A4 أفقي عند الطباعة</span>
+    <button class="cert-do-img" id="cert-img-btn" onclick="saveCertImage()">🖼 حفظ كصورة</button>
+    <button class="cert-do-print" onclick="doPrintCert()">🖨 طباعة</button>
   </div>
   <div class="cert-stage" id="cert-stage">
     <div class="cert-holder" id="cert-holder">
@@ -2759,3 +2820,12 @@ initGallery();
  
 </body>
 </html>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
