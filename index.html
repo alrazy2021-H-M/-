@@ -20,7 +20,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
   --green-900:#0b3d2e; --green-800:#12503c; --green-700:#17614a;
@@ -522,6 +522,64 @@ body:not(.locked) #gate{display:none!important}
 }
 .gate-err{display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:9px 12px;border-radius:10px;margin-bottom:12px}
 .gate-note{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:14px;line-height:1.8}
+ 
+/* ====== 📜 عارض الشهادة داخل الصفحة (يعمل على الآيفون) ====== */
+.cert-view{position:fixed;inset:0;z-index:90;background:#0b3d2e;display:none;flex-direction:column}
+.cert-view.open{display:flex}
+.cert-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid rgba(232,160,32,.5);
+}
+.cert-bar button{font-family:inherit;font-weight:900;font-size:14px;padding:11px 20px;border-radius:12px;border:none;cursor:pointer}
+.cert-back{background:#fff;color:var(--green-900);box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.cert-do-print{background:linear-gradient(180deg,var(--gold),var(--gold-dark));color:#3a2800;box-shadow:0 3px 12px rgba(232,160,32,.45)}
+.cert-do-img{background:linear-gradient(180deg,#2fa36b,#1c7a4c);color:#fff;box-shadow:0 3px 12px rgba(28,122,76,.45)}
+.cert-do-img[disabled]{opacity:.6}
+.cert-hint{font-size:11.5px;font-weight:700;color:#cfe6da;text-align:center;padding:0 8px}
+.cert-stage{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;-webkit-overflow-scrolling:touch}
+.cert-holder{position:relative;flex-shrink:0}
+.cert-sheet{
+  position:absolute;top:0;right:0;transform-origin:top right;
+  width:297mm;height:198.2mm;overflow:hidden;
+  background:#fff url("cert-bg.jpg") center/100% 100% no-repeat;
+  box-shadow:0 12px 44px rgba(0,0,0,.5);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.cert-sheet .name-slot{
+  position:absolute;left:50%;top:36.9%;transform:translate(-50%,-50%);
+  width:58%;text-align:center;font-family:"Aref Ruqaa",Tahoma,sans-serif;
+  font-weight:700;color:#13315c;letter-spacing:.5px;white-space:nowrap;overflow:hidden;
+}
+.cert-sheet .date-slot{
+  position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
+  font-family:Tahoma,sans-serif;font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
+}
+@media(max-width:560px){.cert-hint{display:none}.cert-bar{gap:8px}.cert-bar button{padding:10px 12px;font-size:12.5px}}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body>*{display:none!important}
+  body>.cert-view.open{display:block!important;position:static!important;background:#fff!important;inset:auto!important}
+  .cert-bar{display:none!important}
+  .cert-stage{display:block!important;padding:0!important;overflow:visible!important;text-align:center!important}
+  /* إطار مقصوص بعرض 280مم ليدخل داخل المساحة القابلة للطباعة في A4 أفقي
+     (سفاري الآيفون يضيف هوامش افتراضية، فكان عرض 297مم يُقص من الجهة اليسرى) */
+  .cert-holder{
+    position:relative!important;width:280mm!important;height:186.8mm!important;
+    overflow:hidden!important;margin:0 auto!important;display:inline-block!important;
+  }
+  /* تبقى الورقة absolute داخل الإطار حتى تظل مرجع تموضع الاسم والتاريخ (%)
+     والتصغير عبر transform يحافظ على تناسب كل العناصر والخطوط */
+  .cert-sheet{
+    position:absolute!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;
+    width:297mm!important;height:198.2mm!important;
+    transform:scale(.9428)!important;transform-origin:top left!important;
+    box-shadow:none!important;margin:0!important;
+  }
+  .cert-sheet .name-slot,.cert-sheet .date-slot{position:absolute!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
 </style>
 </head>
 <body class="locked">
@@ -732,7 +790,7 @@ function checkGate(){
     <span class="saved-msg" id="saved-msg">✔ تم الحفظ وتحديث اللوحات</span>
   </div>
   <div style="margin-top:26px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;max-width:480px">
-    <div style="font-weight:900;font-size:15px;margin-bottom:10px">🔐 تغيير كلمة مرور البوابة</div>
+    <div style="font-weight:900;font-size:15px;margin-bottom:10px">🔐 تغيير كلمة مرور لوحة الإدارة</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input id="new-pass" type="password" placeholder="كلمة المرور الجديدة" style="flex:1;min-width:180px;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px">
       <button class="save-btn" onclick="changePass()">تحديث</button>
@@ -822,7 +880,7 @@ function checkGate(){
     <p style="font-size:13.5px;color:var(--muted);line-height:1.9;margin-bottom:16px">هذه البوابة مخصصة للجنة التميز المدرسي لإدارة الأسماء والنقاط واالمبادرات.</p>
     <label>كلمة المرور</label>
     <input id="login-pass" type="password" placeholder="أدخل كلمة المرور" onkeydown="if(event.key==='Enter')doLogin()">
-    <div id="login-err" style="display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:14px">✖ كلمة المرور غير صحيحة، حاول مرة أخرى.</div>
+    <div id="login-err" style="display:none;background:#fdecec;color:#c0392b;font-size:13px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:14px">كلمة المرور غير صحيحة.</div>
     <div class="actions">
       <button class="save" onclick="doLogin()">دخول</button>
       <button class="cancel" onclick="closeLogin()">إلغاء</button>
@@ -910,6 +968,7 @@ function checkGate(){
  
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <script>
 /* ====== ربط Firebase (قاعدة البيانات المشتركة لجميع الزوار) ====== */
@@ -924,6 +983,10 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
+/* بريد حساب الإدارة في Firebase Authentication — ليس سرًا، السر هو كلمة المرور فقط */
+const ADMIN_EMAIL = "admin@razi-platform.local";
+try{ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION); }catch(e){}
  
 /* ====== أسباب منح النقاط للفصل كاملًا ====== */
 const CLASS_REASONS=[
@@ -1015,7 +1078,7 @@ gallery:[]
 };
  
 let DATA=JSON.parse(JSON.stringify(DEFAULTS));
-let PASS="1448";
+/* لم تعد كلمة المرور موجودة في الكود ولا في قاعدة البيانات — التحقق يتم عبر Firebase Authentication */
 let loggedIn=false;
 let firebaseReady=false;
  
@@ -1080,11 +1143,10 @@ function isEditingAdmin(){
 db.ref("platform").on("value",snap=>{
   const val=snap.val();
   if(!val||!val.data){
-    db.ref("platform").set({data:DEFAULTS,pass:PASS});
+    db.ref("platform").set({data:DEFAULTS});
     return;
   }
   firebaseReady=true;
-  if(val.pass)PASS=String(val.pass);
   if(!isEditingAdmin()){
     DATA=normalizeData(val.data);
     renderAll();
@@ -1101,6 +1163,7 @@ function portalClick(){
   }
 }
 function logoutUser(){
+  try{ auth.signOut(); }catch(e){}
   loggedIn=false;
   document.body.classList.remove("logged");
   document.getElementById("portal-btn").textContent="🔑 دخول لجنة التميز";
@@ -1114,29 +1177,46 @@ function openLogin(){
   setTimeout(()=>document.getElementById("login-pass").focus(),100);
 }
 function closeLogin(){document.getElementById("login-overlay").classList.remove("open")}
-function doLogin(){
-  if(document.getElementById("login-pass").value===PASS){
+async function doLogin(){
+  const inp=document.getElementById("login-pass");
+  const err=document.getElementById("login-err");
+  const pw=(inp.value||"").trim();
+  if(!pw){err.textContent="فضلاً أدخل كلمة المرور.";err.style.display="block";return}
+  err.style.display="none";
+  inp.disabled=true;
+  try{
+    await auth.signInWithEmailAndPassword(ADMIN_EMAIL,pw);
     loggedIn=true;
     document.body.classList.add("logged");
     closeLogin();
     document.getElementById("portal-btn").textContent="⚙️ لوحة الإدارة والتعديل";
     renderAll();
     goView("admin");
-  }else{
-    document.getElementById("login-err").style.display="block";
+  }catch(e){
+    const c=(e&&e.code)||"";
+    let msg="كلمة المرور غير صحيحة.";
+    if(c==="auth/too-many-requests")msg="تم إيقاف المحاولات مؤقتًا لكثرة الأخطاء — انتظر قليلاً.";
+    else if(c==="auth/network-request-failed")msg="تعذّر الاتصال بالإنترنت.";
+    else if(c==="auth/user-not-found"||c==="auth/operation-not-allowed")msg="حساب الإدارة غير مُهيَّأ في Firebase Authentication.";
+    err.textContent=msg;
+    err.style.display="block";
+  }finally{
+    inp.disabled=false;
   }
 }
 async function changePass(){
   const v=document.getElementById("new-pass").value.trim();
-  if(v.length<4){alert("فضلاً اختر كلمة مرور من 4 خانات فأكثر.");return}
-  PASS=v;
+  if(v.length<6){alert("فضلاً اختر كلمة مرور من 6 خانات فأكثر (شرط Firebase).");return}
   const m=document.getElementById("pass-msg");
   try{
-    await db.ref("platform/pass").set(v);
-    m.textContent="✔ تم تحديث كلمة المرور وحفظها بشكل دائم";
+    if(!auth.currentUser)throw new Error("no-user");
+    await auth.currentUser.updatePassword(v);
+    m.textContent="✔ تم تحديث كلمة المرور في Firebase Authentication";
     m.style.background="#e2f5e9";m.style.color="#1a7a43";
   }catch(e){
-    m.textContent="⚠ تعذر الحفظ — تحقق من الاتصال بالإنترنت وحاول مجددًا";
+    m.textContent=((e&&e.code)==="auth/requires-recent-login")
+      ? "⚠ سجّل الخروج ثم ادخل مجددًا قبل تغيير كلمة المرور"
+      : "⚠ تعذر التحديث — تحقق من الاتصال أو اختر كلمة مرور أقوى (6 خانات فأكثر)";
     m.style.background="#fdf3dd";m.style.color="#a77410";
   }
   document.getElementById("new-pass").value="";
@@ -1782,51 +1862,122 @@ async function saveQuickEdit(kind,i){
   if(!ok)alert("⚠ تعذر حفظ التعديل — تحقق من الاتصال بالإنترنت وحاول مجددًا");
 }
  
-/* قالب شهادة فرسان التميز — تصميم مبني بالكامل بلغة CSS (لا يعتمد على أي صورة خارجية)
-   لضمان طباعة موثوقة على جميع الأجهزة بما فيها آيفون/آيباد */
+/* ============================================================
+   📜 عارض الشهادة داخل الصفحة (بدل النافذة الجديدة)
+   يعمل على الآيفون: زر رجوع واضح + إيماءة السحب للخلف
+   ============================================================ */
+let CERT_SHEET_W=0,CERT_SHEET_H=0;
+function fitCertSheet(){
+  const stage=document.getElementById("cert-stage");
+  const holder=document.getElementById("cert-holder");
+  const sheet=document.getElementById("cert-sheet");
+  if(!stage||!sheet||!holder)return;
+  if(!CERT_SHEET_W){
+    sheet.style.transform="none";
+    holder.style.width="auto";holder.style.height="auto";
+    CERT_SHEET_W=sheet.offsetWidth;CERT_SHEET_H=sheet.offsetHeight;
+  }
+  if(!CERT_SHEET_W||!CERT_SHEET_H)return;
+  const aw=stage.clientWidth-24, ah=stage.clientHeight-24;
+  let s=Math.min(aw/CERT_SHEET_W, ah/CERT_SHEET_H);
+  if(!isFinite(s)||s<=0)s=1;
+  sheet.style.transform="scale("+s+")";
+  holder.style.width=(CERT_SHEET_W*s)+"px";
+  holder.style.height=(CERT_SHEET_H*s)+"px";
+}
 function printCert(i){
   const c=DATA.certs[i];
   if(!c)return;
   const today=new Date().toLocaleDateString("ar-SA-u-nu-latn",{year:"numeric",month:"long",day:"numeric"});
   const nameLen=(c.name||"").length;
   const nameFs=nameLen>26?9:nameLen>20?10.5:nameLen>15?12:14;
-  const w=window.open("","_blank");
-  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>شهادة فرسان للتميز — ${esc(c.name)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
-  <style>
-  @page{size:A4 landscape;margin:0}
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Tahoma,sans-serif;width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;background:#e9ede9;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .sheet{
-    width:297mm;height:198.2mm;position:relative;overflow:hidden;
-    background-image:url(https://alrazy2021-H-M.github.io/-/cert-bg.jpg);
-    background-size:100% 100%;background-position:center;background-repeat:no-repeat;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;
-  }
-  .name-slot{
-    position:absolute;left:50%;top:36.9%;transform:translate(-50%,-50%);
-    width:58%;text-align:center;
-    font-family:"Aref Ruqaa",Tahoma,sans-serif;
-    font-weight:700;font-size:${nameFs}mm;color:#13315c;letter-spacing:.5px;
-    white-space:nowrap;overflow:hidden;
-  }
-  .date-slot{
-    position:absolute;left:53%;top:90%;transform:translate(-50%,-50%);
-    font-size:3.4mm;font-weight:800;color:#5c5346;white-space:nowrap;
-  }
-  @media print{
-    body{background:#fff}
-    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  }
-  </style></head><body>
-  <div class="sheet">
-    <div class="name-slot">${esc(c.name)}</div>
-    <div class="date-slot">📅 ${esc(c.d||today)}</div>
-  </div>
-  <scr`+`ipt>window.onload=()=>setTimeout(()=>window.print(),600)<\/scr`+`ipt>
-  </body></html>`);
-  w.document.close();
+  const nameEl=document.getElementById("cert-name");
+  nameEl.textContent=c.name||"";
+  nameEl.style.fontSize=nameFs+"mm";
+  document.getElementById("cert-date").textContent="📅 "+(c.d||today);
+  document.getElementById("cert-view").classList.add("open");
+  document.body.style.overflow="hidden";
+  setTimeout(fitCertSheet,30);
+  try{history.pushState({certView:true},"")}catch(e){}
 }
+function closeCertView(fromPop){
+  const v=document.getElementById("cert-view");
+  if(!v||!v.classList.contains("open"))return;
+  v.classList.remove("open");
+  document.body.style.overflow="";
+  if(!fromPop){
+    try{ if(history.state&&history.state.certView)history.back(); }catch(e){}
+  }
+}
+function doPrintCert(){
+  setTimeout(function(){
+    try{window.print()}catch(e){alert("تعذّر فتح نافذة الطباعة على هذا الجهاز.")}
+  },60);
+}
+/* حفظ الشهادة كصورة PNG بمقاس عالي الدقة — لا يعتمد على محرك الطباعة في سفاري */
+async function saveCertImage(){
+  const btn=document.getElementById("cert-img-btn");
+  const old=btn?btn.innerHTML:"";
+  if(btn){btn.innerHTML="⏳ جارٍ التجهيز…";btn.disabled=true;}
+  try{
+    const W=3070,H=2048;          // ضعف مقاس cert-bg.jpg (1535×1024)
+    const MM=W/297;               // بكسل لكل مليمتر بنفس مقاييس ورقة الشهادة
+    const cv=document.createElement("canvas");cv.width=W;cv.height=H;
+    const ctx=cv.getContext("2d");
+    const img=new Image();
+    await new Promise(function(ok,no){
+      img.onload=ok;img.onerror=function(){no(new Error("bg"))};img.src="cert-bg.jpg";
+    });
+    ctx.drawImage(img,0,0,W,H);
+ 
+    const nameEl=document.getElementById("cert-name");
+    const nameTxt=(nameEl.textContent||"").trim();
+    const nameMm=parseFloat(nameEl.style.fontSize)||14;
+    const namePx=nameMm*MM;
+    try{
+      await document.fonts.load('700 '+Math.round(namePx)+'px "Aref Ruqaa"');
+      await document.fonts.ready;
+    }catch(e){}
+ 
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillStyle="#13315c";
+    ctx.font='700 '+namePx+'px "Aref Ruqaa", Tahoma, sans-serif';
+    ctx.fillText(nameTxt,W*0.5,H*0.369);
+ 
+    ctx.font='800 '+(3.4*MM)+'px Tahoma, sans-serif';
+    ctx.fillStyle="#5c5346";
+    ctx.fillText((document.getElementById("cert-date").textContent||"").trim(),W*0.53,H*0.90);
+ 
+    const blob=await new Promise(function(r){cv.toBlob(r,"image/png")});
+    if(!blob)throw new Error("blob");
+    const safe=(nameTxt||"تميز").replace(/[\\/:*?"<>|]/g,"").slice(0,40);
+    const fname="شهادة-"+safe+".png";
+ 
+    try{
+      const file=new File([blob],fname,{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"شهادة فرسان للتميز"});
+        return;
+      }
+    }catch(e){ if(e&&e.name==="AbortError")return; }
+ 
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=fname;a.rel="noopener";
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},5000);
+  }catch(e){
+    alert("تعذّر إنشاء صورة الشهادة على هذا الجهاز. استخدم زر الطباعة بدلاً منها.");
+  }finally{
+    if(btn){btn.innerHTML=old;btn.disabled=false;}
+  }
+}
+window.addEventListener("popstate",function(){closeCertView(true)});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeCertView()});
+window.addEventListener("resize",function(){
+  const v=document.getElementById("cert-view");
+  if(v&&v.classList.contains("open"))fitCertSheet();
+});
+window.addEventListener("orientationchange",function(){setTimeout(fitCertSheet,250)});
  
  
 function computeLiveKpi(key){
@@ -2676,5 +2827,31 @@ window.addEventListener("unhandledrejection",e=>{
 renderAll();
 initGallery();
 </script>
+<div class="cert-view" id="cert-view">
+  <div class="cert-bar">
+    <button class="cert-back" onclick="closeCertView()">‹ رجوع للمنصة</button>
+    <span class="cert-hint">للآيفون: «حفظ كصورة» أدق نتيجة — أو اختر A4 أفقي عند الطباعة</span>
+    <button class="cert-do-img" id="cert-img-btn" onclick="saveCertImage()">🖼 حفظ كصورة</button>
+    <button class="cert-do-print" onclick="doPrintCert()">🖨 طباعة</button>
+  </div>
+  <div class="cert-stage" id="cert-stage">
+    <div class="cert-holder" id="cert-holder">
+      <div class="cert-sheet" id="cert-sheet">
+        <div class="name-slot" id="cert-name"></div>
+        <div class="date-slot" id="cert-date"></div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
 </body>
 </html>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
