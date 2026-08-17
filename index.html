@@ -2111,6 +2111,7 @@ db.ref("platform/data/inits").on("value",snap=>{
 },err=>{console.error("Inits listener error:",err)});
  
 let adminTab="students";
+let adminSearch="";
 document.querySelectorAll(".admin-tabs button").forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll(".admin-tabs button").forEach(x=>x.classList.remove("active"));
@@ -2318,8 +2319,49 @@ function renderAdminInner(){
 فيصل بن محمد"></textarea>
       <button class="add-row-btn" onclick="bulkImportNames('${adminTab}')">📥 استيراد الأسماء الآن</button>
     </div>
-    <div class="edit-row head"><div>${labels[0]}</div><div>${labels[1]}</div><div>المبادرات (النقاط)</div><div></div></div>
-    ${arr.map((x,i)=>`
+    <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:16px">
+      <div style="font-weight:900;font-size:14px;margin-bottom:8px">🔎 البحث عن اسم ${adminTab==="students"?"طالب":"معلم"}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="admin-search" value="${esc(adminSearch)}" oninput="onAdminSearch(this.value)" placeholder="اكتب جزءًا من الاسم — مثال: أصيل الجهني" style="flex:1;min-width:200px;font-family:inherit;font-size:14.5px;font-weight:700;padding:11px 14px;border:1px solid var(--line);border-radius:11px;background:#fbfdfc;color:var(--ink)">
+        <button class="reset-btn" onclick="clearAdminSearch()">✖ مسح</button>
+      </div>
+      <div id="admin-search-count" style="font-size:12.5px;font-weight:800;color:var(--muted);margin-top:8px"></div>
+    </div>
+    <div id="admin-person-list"></div>`;
+  renderAdminPersonList();
+  if(adminTab==="teachers")renderTeacherAdminChart();
+}
+/* ============================================================
+   🔎 خانة البحث عن اسم داخل قائمة الطلاب/المعلمين بلوحة الإدارة
+   تعمل على الفهرس الأصلي للاسم، فالنقاط والصور والحذف
+   تُطبَّق دائمًا على الشخص الصحيح حتى أثناء التصفية
+   ============================================================ */
+function searchNorm(s){
+  return String(s||"")
+    .replace(/[\u064B-\u0652\u0670\u0640]/g,"")
+    .replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ئ/g,"ي")
+    .replace(/ؤ/g,"و").replace(/ة/g,"ه")
+    .replace(/^(ا\.\s*|الاستاذ\s+|استاذ\s+)/,"")
+    .replace(/\s+/g," ").trim().toLowerCase();
+}
+function adminSearchMatch(name){
+  const q=searchNorm(adminSearch);
+  if(!q)return true;
+  const n=searchNorm(name);
+  return q.split(" ").every(t=>n.includes(t));
+}
+function onAdminSearch(v){
+  adminSearch=v;
+  renderAdminPersonList();
+}
+function clearAdminSearch(){
+  adminSearch="";
+  const el=document.getElementById("admin-search");
+  if(el){el.value="";el.focus()}
+  renderAdminPersonList();
+}
+function personRowHtml(x,i){
+  return `
     <div class="edit-row">
       <div class="name-cell">
         <input value="${esc(x.n)}" onchange="DATA.${adminTab}[${i}].n=this.value">
@@ -2336,8 +2378,22 @@ function renderAdminInner(){
       </div>
       <button class="del-btn" onclick="delRow(${i})" title="حذف">🗑</button>
       <div class="tally-row">${personTally(x)}</div>
-    </div>`).join("")}`;
-  if(adminTab==="teachers")renderTeacherAdminChart();
+    </div>`;
+}
+function renderAdminPersonList(){
+  const box=document.getElementById("admin-person-list");
+  if(!box)return;
+  const arr=DATA[adminTab]||[];
+  const rows=arr.map((x,i)=>({x,i})).filter(o=>adminSearchMatch(o.x.n));
+  const cnt=document.getElementById("admin-search-count");
+  if(cnt)cnt.textContent=String(adminSearch||"").trim()
+    ?`نتائج البحث: ${rows.length} من ${arr.length}`
+    :`الإجمالي: ${arr.length} اسمًا`;
+  const labels=adminTab==="students"?["اسم الطالب","نوع المبادرة"]:["اسم المعلم","نوع المبادرة"];
+  const head=`<div class="edit-row head"><div>${labels[0]}</div><div>${labels[1]}</div><div>المبادرات (النقاط)</div><div></div></div>`;
+  box.innerHTML=head+(rows.length
+    ?rows.map(o=>personRowHtml(o.x,o.i)).join("")
+    :'<div class="gal-empty">لا يوجد اسم مطابق لكلمة البحث — جرّب جزءًا آخر من الاسم أو اضغط «مسح».</div>');
 }
 let chartTeachersAdmin=null;
 function renderTeacherRankListHtml(){
@@ -2504,6 +2560,7 @@ function addRow(){
     DATA.kpis.push({n:"مؤشر جديد",cur:0,tgt:100,unit:"%"});
   }else{
     DATA[adminTab].push({n:"اسم جديد",g:"",p:0,c:0});
+    adminSearch="";
   }
   renderAdmin();
 }
@@ -2855,3 +2912,7 @@ initGallery();
  
  
  
+ 
+
+
+
