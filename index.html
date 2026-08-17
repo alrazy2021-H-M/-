@@ -2147,12 +2147,12 @@ function renderAdminInner(){
       <div class="edit-row init-edit-row">
         <input value="${esc(x.t)}" onchange="DATA.inits[${i}].t=this.value">
         <div class="name-cell">
-          <input value="${esc(x.o)}" onchange="DATA.inits[${i}].o=this.value">
+          <input value="${esc(x.o)}" onchange="setInitOwner(${i},this.value)">
           ${x.img?`<img class="admin-thumb" src="${x.img}" alt="" style="cursor:zoom-in" title="اضغط لمشاهدة الصورة بحجمها الكامل" onclick="viewInitPhoto(${i})">`:""}
           <button class="cam-btn ${x.img?"has":""}" title="رفع صورة للمبادرة" onclick="pickInitPhoto(${i})">📷</button>
           ${x.img?`<button class="cam-btn" style="background:#fdecec;border-color:#f3c1c1" title="حذف الصورة" onclick="delInitPhoto(${i})">✖</button>`:""}
         </div>
-        <input class="num-in" id="init-pts-${i}" type="number" value="${x.p}" onchange="DATA.inits[${i}].p=+this.value||0">
+        <input class="num-in" id="init-pts-${i}" type="number" value="${x.p}" onchange="setInitPoints(${i},+this.value||0)">
         <select onchange="approveInit(${i},this.value)">
           <option value="ok" ${x.s==="ok"?"selected":""}>معتمد ومضاف</option>
           <option value="wait" ${x.s==="wait"?"selected":""}>قيد المراجعة</option>
@@ -2160,14 +2160,23 @@ function renderAdminInner(){
         <button class="del-btn" onclick="delRow(${i})" title="حذف">🗑</button>
       </div>
       <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-4px 0 8px;padding:0 4px">
+        <span style="font-size:12px;font-weight:800;color:#3c5b51;white-space:nowrap">صفة المبادر:</span>
+        <select style="font-family:inherit;font-size:12.5px;font-weight:800;padding:5px 10px;border:1px solid var(--line);border-radius:9px;background:#fbfdfc;color:var(--ink)" title="تحدد إلى أي قائمة تُرحَّل النقاط: الطلاب أم المعلمون" onchange="setInitRole(${i},this.value)">
+          <option value="طالب بالمدرسة" ${/طالب/.test(x.r||"")?"selected":""}>🎓 طالب — تُرحّل للوحة الأوائل</option>
+          <option value="معلم" ${/طالب/.test(x.r||"")?"":"selected"}>👤 معلم — تُرحّل لقائمة المعلمين</option>
+        </select>
         ${x.pdfData?`<button style="font-size:12px;font-weight:800;color:#c0392b;background:#fdecec;border:1px solid #f3c1c1;padding:4px 10px;border-radius:8px" onclick="openInitAttachment(${i},'pdf')">📄 ${esc(x.pdfName||"ملف PDF")}</button><button class="cam-btn" style="background:#fdecec;border-color:#f3c1c1" title="حذف مرفق PDF" onclick="delInitAttachment(${i},'pdf')">✖</button>`
           :`<button class="add-row-btn" style="padding:5px 12px;font-size:12px" onclick="pickInitAttachment(${i},'pdf')">📄 إرفاق PDF</button>`}
         ${x.docData?`<button style="font-size:12px;font-weight:800;color:#1a4d8f;background:#e8f0fb;border:1px solid #c7dcf7;padding:4px 10px;border-radius:8px" onclick="openInitAttachment(${i},'doc')">📝 ${esc(x.docName||"ملف Word")}</button><button class="cam-btn" style="background:#fdecec;border-color:#f3c1c1" title="حذف مرفق Word" onclick="delInitAttachment(${i},'doc')">✖</button>`
           :`<button class="add-row-btn" style="padding:5px 12px;font-size:12px" onclick="pickInitAttachment(${i},'doc')">📝 إرفاق Word</button>`}
       </div>
-      ${x.s==="ok"?`<div style="margin:-4px 0 12px;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 4px">
-        <span style="font-size:12px;font-weight:800;color:${x.linked?"#1a7a43":"#a77410"}">${x.linked?"✔ رُحّلت النقاط لحساب "+esc(x.o):"⚠ لم تُرحّل النقاط بعد لحساب "+esc(x.o)}</span>
-        ${x.linked?"":`<button class="add-row-btn" style="padding:6px 14px;font-size:12px" onclick="linkInitToPerson(${i});renderAdmin();renderAll();persist()">🔄 ترحيل النقاط الآن</button>`}
+      ${x.s==="ok"?`<div style="margin:-4px 0 12px;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0 4px">
+        <span style="font-size:12px;font-weight:800;color:${x.linked?"#1a7a43":"#a77410"}">${x.linked
+          ?"✔ رُحّلت "+(x.linkedPts!=null?+x.linkedPts:+x.p||5)+" نقطة لحساب "+esc(x.linkedTo||x.o)+" ضمن قائمة "+((x.linkedList||(/طالب/.test(x.r||"")?"students":"teachers"))==="students"?"الطلاب (تظهر في لوحة الأوائل)":"المعلمين (لا تظهر في لوحة الأوائل)")
+          :"⚠ لم تُرحّل النقاط بعد لحساب "+esc(x.o)}</span>
+        ${x.linked
+          ?`<button class="add-row-btn" style="padding:6px 14px;font-size:12px" title="يسحب النقاط القديمة ويعيد ترحيلها بالقيمة والاسم والصفة الحالية" onclick="resyncInit(${i})">🔄 إعادة الترحيل</button>`
+          :`<button class="add-row-btn" style="padding:6px 14px;font-size:12px" onclick="resyncInit(${i})">🔄 ترحيل النقاط الآن</button>`}
       </div>`:""}`).join("")}`;
     return;
   }
@@ -2566,6 +2575,10 @@ function addRow(){
 }
 function delRow(i){
   if(!confirm("هل تريد حذف هذا الصف؟"))return;
+  if(adminTab==="inits"&&DATA.inits[i]&&DATA.inits[i].linked){
+    if(confirm("رُحّلت نقاط هذه المبادرة لحساب صاحبها. هل تريد سحب النقاط منه أيضًا؟\n«موافق» = سحب النقاط • «إلغاء» = إبقاء النقاط في حسابه"))
+      unlinkInitFromPerson(DATA.inits[i]);
+  }
   const map={inits:DATA.inits,org:DATA.org,plan:DATA.plan,meetings:DATA.meetings,certs:DATA.certs,kpis:DATA.kpis,classes:DATA.classes};
   (map[adminTab]||DATA[adminTab]).splice(i,1);
   renderAdmin();
@@ -2622,17 +2635,60 @@ async function approveInit(i,status){
     if(inp)inp.value=5;
   }
   if(status==="ok")linkInitToPerson(i);
+  else if(x.linked)unlinkInitFromPerson(x);
   renderAdmin();renderAll();
-  await persist();
+  const ok=await persist();
+  if(!ok)alert("⚠ تعذر حفظ الاعتماد — تحقق من الاتصال بالإنترنت وحاول مجددًا.");
 }
-function linkInitToPerson(i){
+/* ====== ترحيل نقاط المبادرة إلى حساب الطالب أو المعلم ======
+   يطابق الاسم بمرونة (همزات/تاء مربوطة/مسافات زائدة) حتى لا يُنشأ اسم مكرر،
+   ويحتفظ ببيانات الترحيل داخل المبادرة ليمكن سحبها أو إعادة ترحيلها لاحقًا */
+function findPersonIdx(arr,name){
+  const raw=String(name||"").trim();
+  if(!raw)return -1;
+  let idx=arr.findIndex(p=>String(p.n||"").trim()===raw);
+  if(idx>-1)return idx;
+  const key=searchNorm(raw);
+  idx=arr.findIndex(p=>searchNorm(p.n)===key);
+  if(idx>-1)return idx;
+  const compact=key.replace(/ /g,"");
+  return arr.findIndex(p=>searchNorm(p.n).replace(/ /g,"")===compact);
+}
+function initListOf(x){
+  return (x&&x.linkedList)?(x.linkedList==="teachers"?"teachers":"students")
+    :(/طالب/.test((x&&x.r)||"")?"students":"teachers");
+}
+/* سحب النقاط التي سبق ترحيلها (يُستخدم قبل إعادة الترحيل أو عند إلغاء الاعتماد) */
+function unlinkInitFromPerson(x){
+  if(!x||!x.linked)return;
+  const list=x.linkedList?(x.linkedList==="teachers"?"teachers":"students"):(/طالب/.test(x.r||"")?"students":"teachers");
+  const arr=DATA[list]||[];
+  const name=x.linkedTo||x.o||"";
+  const reason=x.linkedReason||(INIT_TYPES.includes(x.type)?x.type:"مبادرة عامة");
+  const amt=(x.linkedPts!=null)?(+x.linkedPts||0):(+x.p||5);
+  const idx=findPersonIdx(arr,name);
+  if(idx>-1&&amt>0){
+    const person=arr[idx];
+    person.rs=person.rs||{};
+    const q=(+person.rs[reason]||0)-amt;
+    if(q>0)person.rs[reason]=q;else delete person.rs[reason];
+    personTotals(list,idx);
+  }
+  x.linked=false;
+  delete x.linkedTo;delete x.linkedList;delete x.linkedPts;delete x.linkedReason;
+}
+function linkInitToPerson(i,force){
   const x=DATA.inits[i];
-  if(!x||x.s!=="ok"||x.linked)return;
-  const isStudent=/طالب/.test(x.r||"");
-  const arr=isStudent?DATA.students:DATA.teachers;
+  if(!x||x.s!=="ok")return;
+  if(x.linked){
+    if(!force)return;
+    unlinkInitFromPerson(x);
+  }
+  const list=/طالب/.test(x.r||"")?"students":"teachers";
+  const arr=DATA[list];
   const name=(x.o||"").trim();
   if(!name)return;
-  let idx=arr.findIndex(p=>(p.n||"").trim()===name);
+  let idx=findPersonIdx(arr,name);
   if(idx===-1){
     arr.push({n:name,g:"",p:0,c:0,rs:{}});
     idx=arr.length-1;
@@ -2640,9 +2696,51 @@ function linkInitToPerson(i){
   const person=arr[idx];
   person.rs=person.rs||{};
   const reason=INIT_TYPES.includes(x.type)?x.type:"مبادرة عامة";
-  person.rs[reason]=(+person.rs[reason]||0)+(+x.p||5);
-  personTotals(isStudent?"students":"teachers",idx);
+  const pts=+x.p||5;
+  person.rs[reason]=(+person.rs[reason]||0)+pts;
+  personTotals(list,idx);
   x.linked=true;
+  x.linkedList=list;
+  x.linkedTo=person.n;
+  x.linkedPts=pts;
+  x.linkedReason=reason;
+}
+/* زر «ترحيل / إعادة الترحيل» — يسحب القديم ثم يُرحّل بالقيمة والاسم والصفة الحالية */
+async function resyncInit(i){
+  if(!loggedIn){openLogin();return}
+  const x=DATA.inits[i];
+  if(!x)return;
+  linkInitToPerson(i,true);
+  renderAdmin();renderAll();
+  const ok=await persist();
+  if(!ok){alert("⚠ تعذر حفظ الترحيل — تحقق من الاتصال بالإنترنت ثم أعد المحاولة.");return}
+  if(x.linked){
+    alert(`✔ رُحّلت ${x.linkedPts} نقطة لحساب «${x.linkedTo}» ضمن قائمة ${x.linkedList==="students"?"الطلاب":"المعلمين"}.`);
+  }
+}
+/* تعديل نقاط أو اسم أو صفة مبادرة معتمدة يعيد المزامنة تلقائيًا */
+async function syncInitAfterEdit(i){
+  const x=DATA.inits[i];
+  if(!x)return;
+  if(x.s==="ok"&&x.linked)linkInitToPerson(i,true);
+  renderAdmin();renderAll();
+  const ok=await persist();
+  if(!ok)alert("⚠ تعذر الحفظ — تحقق من الاتصال بالإنترنت وحاول مجددًا.");
+}
+async function setInitPoints(i,v){
+  if(!DATA.inits[i])return;
+  DATA.inits[i].p=v<0?0:v;
+  await syncInitAfterEdit(i);
+}
+async function setInitOwner(i,v){
+  if(!DATA.inits[i])return;
+  DATA.inits[i].o=String(v||"").trim();
+  await syncInitAfterEdit(i);
+}
+async function setInitRole(i,v){
+  if(!DATA.inits[i])return;
+  DATA.inits[i].r=v;
+  await syncInitAfterEdit(i);
 }
 let pendingInitDraftImg=null;
 document.getElementById("m-photo").addEventListener("change",function(){
