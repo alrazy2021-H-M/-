@@ -580,6 +580,22 @@ body:not(.locked) #gate{display:none!important}
   .cert-sheet .name-slot,.cert-sheet .date-slot{position:absolute!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
+ 
+/* ====== الإكمال التلقائي الإلزامي لاسم المبادر ====== */
+#owner-wrap{position:relative}
+.sug-box{position:absolute;top:calc(100% - 8px);right:0;left:0;z-index:70;background:#fff;
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(11,61,46,.18);
+  max-height:210px;overflow-y:auto;display:none}
+.sug-box.open{display:block}
+.sug-item{padding:11px 14px;font-size:14px;font-weight:800;color:var(--ink);cursor:pointer;
+  border-bottom:1px solid #f0f4f2;text-align:right}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover,.sug-item.active{background:var(--green-50);color:var(--green-800)}
+.sug-empty{padding:12px 14px;font-size:13px;font-weight:700;color:var(--muted);text-align:right;line-height:1.8}
+#owner-warn{display:none;background:#fdecec;color:#c0392b;font-size:12.5px;font-weight:800;
+  padding:9px 12px;border-radius:10px;margin:-6px 0 14px;line-height:1.8}
+#owner-ok{display:none;background:#e2f5e9;color:#1a7a43;font-size:12.5px;font-weight:800;
+  padding:9px 12px;border-radius:10px;margin:-6px 0 14px;line-height:1.8}
 </style>
 </head>
 <body class="locked">
@@ -853,10 +869,15 @@ function checkGate(){
       <option>فعالية اليوم العالمي للغة العربية</option>
       <option>تكريم الطلاب المتميزين</option>
     </select>
-    <label>اسم المبادر</label>
-    <input id="m-owner" placeholder="الاسم الثلاثي">
     <label>صفة المبادر</label>
     <select id="m-role"><option>طالب بالمدرسة</option><option>معلم</option></select>
+    <label>اسم المبادر <span style="color:#c0392b">*</span></label>
+    <div id="owner-wrap">
+      <input id="m-owner" autocomplete="off" placeholder="اكتب اسمك الأول ثم اختر اسمك كاملاً من القائمة">
+      <div class="sug-box" id="owner-sug"></div>
+    </div>
+    <div id="owner-warn"></div>
+    <div id="owner-ok"></div>
     <label>وصف موجز</label>
     <textarea id="m-desc" placeholder="وصف مختصر للمبادرة وأثرها"></textarea>
     <label>صورة المبادرة (اختياري) — ستظهر أداة لضبط وضع الصورة بعد اختيارها</label>
@@ -2624,6 +2645,7 @@ function closeModal(){
   if(pdfInput)pdfInput.value="";
   const docInput=document.getElementById("m-doc");
   if(docInput)docInput.value="";
+  if(typeof resetOwnerField==="function")resetOwnerField();
 }
 async function approveInit(i,status){
   if(!loggedIn){openLogin();return}
@@ -2760,10 +2782,128 @@ function readFileAsDataURL(file){
     rd.readAsDataURL(file);
   });
 }
+/* ============================================================
+   ✍️ إكمال تلقائي إلزامي لاسم المبادر
+   يكتب الطالب اسمه الأول فتظهر له الأسماء المسجّلة في لوحة الإدارة،
+   ولا تُقبل المبادرة إلا باسم مطابق لاسم مسجَّل — بحيث تُرحَّل النقاط
+   دائمًا للحساب الصحيح دون إنشاء أسماء مكررة.
+   ============================================================ */
+let ownerMatches=[],ownerActiveIdx=-1;
+function ownerIsStudent(){
+  const r=(document.getElementById("m-role")||{}).value||"";
+  return /طالب/.test(r);
+}
+function ownerList(){
+  return ownerIsStudent()?(DATA.students||[]):(DATA.teachers||[]);
+}
+function showOwnerWarn(msg){
+  const w=document.getElementById("owner-warn");
+  const okb=document.getElementById("owner-ok");
+  if(okb)okb.style.display="none";
+  if(!w)return;
+  w.textContent="⚠ "+msg;w.style.display="block";
+  const i=document.getElementById("m-owner");if(i)i.focus();
+}
+function hideOwnerWarn(){
+  const w=document.getElementById("owner-warn");
+  if(w)w.style.display="none";
+}
+function showOwnerOk(name){
+  const okb=document.getElementById("owner-ok");
+  hideOwnerWarn();
+  if(!okb)return;
+  okb.textContent="✔ تم اعتماد الاسم: "+name;
+  okb.style.display="block";
+}
+function hideOwnerOk(){
+  const okb=document.getElementById("owner-ok");
+  if(okb)okb.style.display="none";
+}
+function ownerFilter(q){
+  const key=searchNorm(q);
+  if(!key)return[];
+  const toks=key.split(" ").filter(Boolean);
+  const starts=[],contains=[];
+  ownerList().forEach(p=>{
+    const n=searchNorm(p.n);
+    if(!n)return;
+    if(n.startsWith(key))starts.push(p.n);
+    else if(toks.every(t=>n.includes(t)))contains.push(p.n);
+  });
+  return [...new Set(starts.concat(contains))].slice(0,8);
+}
+function renderOwnerSug(){
+  const inp=document.getElementById("m-owner");
+  const box=document.getElementById("owner-sug");
+  if(!inp||!box)return;
+  const q=inp.value.trim();
+  ownerMatches=ownerFilter(q);
+  if(!q){box.classList.remove("open");box.innerHTML="";return}
+  box.innerHTML=ownerMatches.length
+    ? ownerMatches.map((n,i)=>`<div class="sug-item ${i===ownerActiveIdx?"active":""}" data-name="${esc(n)}">${esc(n)}</div>`).join("")
+    : '<div class="sug-empty">لا يوجد اسم مطابق في سجل المدرسة — تأكد من كتابة اسمك الأول بشكل صحيح، أو راجع لجنة التميز لتسجيل اسمك.</div>';
+  box.classList.add("open");
+}
+function pickOwner(name){
+  const inp=document.getElementById("m-owner");
+  if(!inp||!name)return;
+  inp.value=name;
+  const box=document.getElementById("owner-sug");
+  if(box)box.classList.remove("open");
+  ownerActiveIdx=-1;
+  showOwnerOk(name);
+}
+function resetOwnerField(){
+  const inp=document.getElementById("m-owner");
+  if(inp)inp.value="";
+  const box=document.getElementById("owner-sug");
+  if(box){box.classList.remove("open");box.innerHTML=""}
+  ownerMatches=[];ownerActiveIdx=-1;
+  hideOwnerWarn();hideOwnerOk();
+}
+(function(){
+  const inp=document.getElementById("m-owner");
+  const box=document.getElementById("owner-sug");
+  if(!inp||!box)return;
+  inp.addEventListener("input",()=>{ownerActiveIdx=-1;hideOwnerWarn();hideOwnerOk();renderOwnerSug()});
+  inp.addEventListener("focus",renderOwnerSug);
+  inp.addEventListener("keydown",e=>{
+    if(!box.classList.contains("open")||!ownerMatches.length)return;
+    if(e.key==="ArrowDown"){e.preventDefault();ownerActiveIdx=(ownerActiveIdx+1)%ownerMatches.length;renderOwnerSug()}
+    else if(e.key==="ArrowUp"){e.preventDefault();ownerActiveIdx=(ownerActiveIdx-1+ownerMatches.length)%ownerMatches.length;renderOwnerSug()}
+    else if(e.key==="Enter"){e.preventDefault();pickOwner(ownerMatches[ownerActiveIdx>-1?ownerActiveIdx:0])}
+    else if(e.key==="Escape"){box.classList.remove("open")}
+  });
+  box.addEventListener("mousedown",e=>{
+    const it=e.target.closest(".sug-item");
+    if(!it)return;
+    e.preventDefault();
+    pickOwner(it.dataset.name);
+  });
+  box.addEventListener("touchstart",e=>{
+    const it=e.target.closest(".sug-item");
+    if(!it)return;
+    e.preventDefault();
+    pickOwner(it.dataset.name);
+  },{passive:false});
+  inp.addEventListener("blur",()=>setTimeout(()=>box.classList.remove("open"),180));
+  const role=document.getElementById("m-role");
+  if(role)role.addEventListener("change",resetOwnerField);
+})();
+ 
 async function saveInit(){
   const t=document.getElementById("m-title").value.trim();
-  const o=document.getElementById("m-owner").value.trim();
-  if(!t||!o){alert("فضلاً أكمل عنوان المبادرة واسم المبادر.");return}
+  let o=document.getElementById("m-owner").value.trim();
+  if(!t){alert("فضلاً أكمل عنوان المبادرة.");return}
+  if(!o){showOwnerWarn("اسم المبادر إلزامي — اكتب اسمك الأول ثم اختر اسمك كاملاً من القائمة.");return}
+  const ownerSrc=ownerList();
+  const oi=findPersonIdx(ownerSrc,o);
+  if(oi===-1){
+    showOwnerWarn("هذا الاسم غير مسجّل ضمن قائمة "+(ownerIsStudent()?"الطلاب":"المعلمين")+" — اكتب أول اسمك واختر اسمك كاملاً من القائمة المنسدلة.");
+    return;
+  }
+  o=ownerSrc[oi].n;   /* اعتماد الاسم الرسمي المسجّل حرفيًا لضمان ترحيل النقاط للحساب الصحيح */
+  hideOwnerWarn();
   const pdfInput=document.getElementById("m-pdf");
   const pdfFile=pdfInput&&pdfInput.files&&pdfInput.files[0];
   if(pdfFile&&pdfFile.size>MAX_ATTACH_BYTES){alert("حجم ملف PDF كبير جدًا (الحد الأقصى تقريبًا 6 ميجابايت). فضلاً اختر ملفًا أصغر.");return}
@@ -3001,6 +3141,10 @@ initGallery();
  
 </body>
 </html>
+ 
+ 
+ 
+ 
  
  
  
