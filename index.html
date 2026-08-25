@@ -47,6 +47,7 @@ nav.tabs{display:flex;gap:4px;background:var(--green-900);margin:0 -4vw;padding:
 nav.tabs button{color:#cfe6da;font-size:14.5px;font-weight:700;padding:14px 15px;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:7px;white-space:nowrap;transition:background .15s,color .15s}
 nav.tabs button:hover{background:rgba(255,255,255,.07);color:#fff}
 nav.tabs button.active{background:#0a3527;color:var(--gold);box-shadow:inset 0 -3px 0 var(--gold)}
+nav.tabs .nav-extra{color:#cfe6da;font-size:14.5px;font-weight:700;padding:14px 15px;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:7px;white-space:nowrap}
  
 main{max-width:1180px;margin:0 auto;padding:28px 4vw 60px}
 .view{display:none;animation:fade .3s ease}
@@ -680,6 +681,8 @@ function checkGate(){
     <button data-view="certs">📜 شهادات التقدير</button>
     <button data-view="kpi">📊 مؤشرات الأداء</button>
     <button data-view="gallery">🖼 معرض الصور</button>
+    <button data-view="improvement">📈 خطة التحسين</button>
+    <button data-view="nafes">🪪 بطاقة نافس</button>
   </nav>
 </header>
  
@@ -780,6 +783,18 @@ function checkGate(){
   <div style="text-align:center;margin-top:18px"><button class="add-btn" id="gal-more" style="display:none" onclick="galShown+=24;renderGallery()">⬇ عرض المزيد من الصور</button></div>
 </section>
  
+<section class="view" id="view-improvement">
+  <div class="section-head">
+    <h2><span class="em">📈</span> خطة التحسين</h2>
+  </div>
+</section>
+
+<section class="view" id="view-nafes">
+  <div class="section-head">
+    <h2><span class="em">🪪</span> بطاقة نافس</h2>
+  </div>
+</section>
+
 <section class="view" id="view-admin">
   <div class="section-head">
     <h2><span class="em">⚙️</span> لوحة الإدارة والتعديل</h2>
@@ -980,6 +995,7 @@ function checkGate(){
 <input type="file" id="init-photo-input" accept="image/*" style="display:none">
 <input type="file" id="init-pdf-input" accept="application/pdf" style="display:none">
 <input type="file" id="init-doc-input" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none">
+<input type="file" id="plan-pdf-input" accept="application/pdf" style="display:none">
 <input type="file" id="org-photo-input" accept="image/*" style="display:none">
  
 <footer>
@@ -1564,6 +1580,55 @@ document.getElementById("init-doc-input").addEventListener("change",async functi
   pendingInitAttIdx=null;
   persist();renderAdmin();renderAll();
 });
+
+/* ====== إرفاق ملف PDF لأهداف خطة التميز (من لوحة الإدارة) ====== */
+let pendingPlanPdfIdx=null;
+function pickPlanPdf(i){
+  if(!loggedIn){openLogin();return}
+  pendingPlanPdfIdx=i;
+  const input=document.getElementById("plan-pdf-input");
+  input.value="";
+  input.click();
+}
+function delPlanPdf(i){
+  if(!loggedIn){openLogin();return}
+  if(!confirm("هل تريد حذف ملف PDF المرفق بهذا الهدف؟"))return;
+  delete DATA.plan[i].pdfData;
+  delete DATA.plan[i].pdfName;
+  persist();renderAdmin();renderAll();
+}
+function openPlanPdf(i){
+  const x=DATA.plan[i];
+  if(!x||!x.pdfData){alert("لا يوجد ملف PDF مرفق بهذا الهدف.");return}
+  try{
+    const blob=dataURLtoBlob(x.pdfData);
+    const url=URL.createObjectURL(blob);
+    window.open(url,"_blank");
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){
+    console.error("Plan PDF open error:",e);
+    alert("تعذر فتح ملف PDF — حاول رفعه من جديد.");
+  }
+}
+document.getElementById("plan-pdf-input").addEventListener("change",async function(){
+  const f=this.files&&this.files[0];
+  if(!f||pendingPlanPdfIdx==null)return;
+  if(f.size>MAX_ATTACH_BYTES){
+    alert("حجم ملف PDF كبير جدًا (الحد الأقصى تقريبًا 6 ميجابايت). فضلاً اختر ملفًا أصغر.");
+    pendingPlanPdfIdx=null;
+    return;
+  }
+  try{
+    DATA.plan[pendingPlanPdfIdx].pdfName=f.name;
+    DATA.plan[pendingPlanPdfIdx].pdfData=await readFileAsDataURL(f);
+    await persist();
+    renderAdmin();renderAll();
+  }catch(e){
+    console.error("Plan PDF attach error:",e);
+    alert("تعذر رفع ملف PDF — حاول مرة أخرى.");
+  }
+  pendingPlanPdfIdx=null;
+});
  
 const GH={owner:"alrazy2021-H-M",repo:"-",galleryDir:"gallery",certsDir:"certificates"};
 (function(){
@@ -1747,6 +1812,7 @@ function renderPlan(){
         <span class="status ${p.s==="done"?"done":p.s==="ok"?"ok":"wait"}">${p.s==="done"?"✅ نُفّذ":p.s==="ok"?"🔄 جارٍ التنفيذ":"⏳ لم يبدأ بعد"}</span>
       </div>
       <div class="plan-act">${esc(p.a)}</div>
+      ${p.pdfData?`<div style="margin:0 0 10px"><button class="add-row-btn" style="padding:7px 14px;font-size:12.5px;border-style:solid" onclick="openPlanPdf(${i})">📄 عرض ملف PDF${p.pdfName?` — ${esc(p.pdfName)}`:""}</button></div>`:""}
       <div class="plan-meta">
         <span>👤 المسؤول: <b>${esc(p.o)}</b></span>
         <span>🗓 موعد الإنجاز: <b>${esc(p.d)}</b></span>
@@ -2250,7 +2316,14 @@ function renderAdminInner(){
       <div class="edit-row head plan-edit-row"><div>الهدف</div><div>المسؤول</div><div>الإنجاز %</div><div>الحالة</div><div></div></div>
       ${DATA.plan.map((x,i)=>`
       <div class="edit-row plan-edit-row">
-        <input value="${esc(x.g)}" onchange="DATA.plan[${i}].g=this.value">
+        <div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+          <input value="${esc(x.g)}" onchange="DATA.plan[${i}].g=this.value">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${x.pdfData
+              ?`<button class="add-row-btn" style="padding:5px 11px;font-size:11.5px;border-style:solid" onclick="openPlanPdf(${i})" title="فتح ملف PDF">📄 ${esc(x.pdfName||"ملف PDF")}</button><button class="cam-btn" style="background:#fdecec;border-color:#f3c1c1" onclick="delPlanPdf(${i})" title="حذف ملف PDF">✖</button>`
+              :`<button class="add-row-btn" style="padding:5px 11px;font-size:11.5px" onclick="pickPlanPdf(${i})">📎 رفع ملف PDF</button>`}
+          </div>
+        </div>
         <input value="${esc(x.o)}" onchange="DATA.plan[${i}].o=this.value">
         <input class="num-in" type="number" min="0" max="100" value="${x.prog}" onchange="DATA.plan[${i}].prog=+this.value||0">
         <select onchange="DATA.plan[${i}].s=this.value">
@@ -3155,6 +3228,5 @@ initGallery();
  
  
  
-
 
 
